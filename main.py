@@ -77,17 +77,13 @@ def process_audio_and_detect_speech():
                     print(f"\nSilence detected, recording length: {recording_length_sec:.2f} seconds")
                     
                     if recording_length_sec >= config.MIN_RECORDING_LENGTH_SEC:
-                        # Generate filename with timestamp
-                        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                        filename = os.path.join(config.RECORDINGS_DIR, f"recording_{timestamp}.wav")
-                        
-                        # Save the recording
-                        audio_utils.save_audio_to_file(recorded_audio, filename)
-                        print(f"Saved recording to {filename}")
+                        # Save the recording with auto-generated filename
+                        saved_path = audio_utils.save_audio_to_file(recorded_audio)
+                        print(f"Saved recording to {saved_path}")
                         
                         # Send to server for transcription
                         print("Transcribing...")
-                        transcript = audio_utils.send_to_whisper(filename)
+                        transcript = audio_utils.send_to_whisper(saved_path)
                         print(f"\nTranscription: {transcript}")
                         
                         # Clean up and return the transcript

@@ -4,6 +4,7 @@ import numpy as np
 import wave
 import os
 import requests
+import datetime
 import config
 
 # Audio configuration is in config.py
@@ -23,14 +24,50 @@ def rms_from_samples(samples):
     """Calculate RMS from audio samples."""
     return np.sqrt(np.mean(samples.astype(np.float32)**2))
 
-def save_audio_to_file(audio_data, filename):
-    """Save audio data to a WAV file."""
-    with wave.open(filename, 'wb') as wf:
+def save_audio_to_file(audio_data, filename=None):
+    """
+    Save audio data to a WAV file, organizing files in a year-month-date directory structure.
+    
+    Parameters:
+    - audio_data (bytes): The audio data to save
+    - filename (str, optional): The filename or path to save to. If None, a filename will be generated
+                               with the current timestamp.
+    
+    Returns:
+    - str: The full path to the saved file
+    """
+    now = datetime.datetime.now()
+    
+    # If no filename is provided, generate one with timestamp
+    if filename is None:
+        timestamp = now.strftime("%Y%m%d_%H%M%S")
+        filename = f"recording_{timestamp}.wav"
+    
+    # Check if the filename is a full path or just a basename
+    if os.path.dirname(filename):
+        # It's a full path, use it as is
+        final_path = filename
+    else:
+        # It's just a basename, organize it in YYYY/MM/DD subdirectories
+        year_dir = now.strftime("%Y")
+        month_dir = now.strftime("%m")
+        day_dir = now.strftime("%d")
+        
+        # Create the directory structure
+        recording_path = os.path.join(config.RECORDINGS_DIR, year_dir, month_dir, day_dir)
+        os.makedirs(recording_path, exist_ok=True)
+        
+        # Create the full path
+        final_path = os.path.join(recording_path, filename)
+    
+    # Save the audio data
+    with wave.open(final_path, 'wb') as wf:
         wf.setnchannels(config.CHANNELS)
         wf.setsampwidth(config.SAMPLE_WIDTH)
         wf.setframerate(config.SAMPLE_RATE)
         wf.writeframes(audio_data)
-    return filename
+    
+    return final_path
 
 def display_volume(db, is_recording):
     """
