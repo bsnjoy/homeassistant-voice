@@ -45,12 +45,24 @@ def display_volume(db, is_recording):
     Returns:
     - None (prints to console)
     """
+    # Static variable to track previous state
+    if not hasattr(display_volume, "prev_recording"):
+        display_volume.prev_recording = False
+    
     width = 40
     normalized_db = max(0, min(1, (db - 30) / 40)) if db > -100 else 0
     num_bars = int(normalized_db * width)
     meter = "│" + "█" * num_bars + " " * (width - num_bars) + "│"
     status = "RECORDING" if is_recording else "LISTENING"
+    
+    # Add a newline when transitioning from recording to listening
+    if display_volume.prev_recording and not is_recording:
+        print()  # Print a newline
+    
     print(f"\r{status}: {meter} {db:.1f} dB", end="")
+    
+    # Update previous state
+    display_volume.prev_recording = is_recording
 
 def send_to_whisper(audio_file):
     """
