@@ -21,6 +21,12 @@ SAMPLE_RATE = 16000
 SAMPLE_WIDTH = 2  # 16-bit audio (S16_LE)
 CHANNELS = 1
 
+# Audio recording command for PulseAudio
+# AUDIO_RECORD_CMD = ["parecord", "--property=media.role=phone", f"--rate={SAMPLE_RATE}", f"--channels={CHANNELS}", "--format=s16le", "--raw", "--latency-msec", "10"]
+# Audio recording command for ALSA (use this if PulseAudio is not available)
+AUDIO_RECORD_CMD = ["arecord", "-D", "dsnoop:CARD=MS,DEV=0", "-r", str(SAMPLE_RATE), "-c", str(CHANNELS), "-f", "S16_LE", "-t", "raw"]
+
+
 # Commands configuration with separate aliases for actions, devices, and rooms
 
 # Action aliases (turn on/off)

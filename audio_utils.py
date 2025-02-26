@@ -9,10 +9,8 @@ import config
 # Audio configuration is in config.py
 
 def get_audio_stream():
-    """Start the audio capture process using arecord and return the process."""
-    cmd = ["arecord", "-D", "dsnoop:CARD=MS,DEV=0", "-r", str(config.SAMPLE_RATE), "-c", str(config.CHANNELS), 
-           "-f", "S16_LE", "-t", "raw"]
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    """Start the audio capture process and return the process."""
+    process = subprocess.Popen(config.AUDIO_RECORD_CMD, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     return process
 
 def db_from_rms(rms):
