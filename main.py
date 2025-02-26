@@ -12,18 +12,15 @@ import datetime
 from threading import Thread
 from queue import Queue, Empty
 import requests
+import config
 
 # Configuration
-DB_THRESHOLD = 50  # Default speech detection threshold in dB
-SILENCE_THRESHOLD_MS = 500  # Default silence duration threshold in ms
-MIN_RECORDING_LENGTH_SEC = 1.0  # Minimum recording length to process
 SAMPLE_RATE = 16000
 SAMPLE_WIDTH = 2  # 16-bit audio (S16_LE)
 CHANNELS = 1
-RECORDINGS_DIR = "recordings"
 
 # Ensure recordings directory exists
-os.makedirs(RECORDINGS_DIR, exist_ok=True)
+os.makedirs(config.RECORDINGS_DIR, exist_ok=True)
 
 def get_audio_stream():
     """Start the audio capture process using arecord and return the process."""
@@ -53,29 +50,26 @@ def save_audio_to_file(audio_data, filename):
 
 
 
-def send_to_whisper(audio_file, model="mobiuslabsgmbh/faster-whisper-large-v3-turbo", response_format="text", server_url="http://192.168.1.65:8000"):
+def send_to_whisper(audio_file):
     """
     Send an audio file to Whisper API for transcription.
 
     Parameters:
     - audio_file (str): Path to the audio file
-    - model (str): The transcription model to use (default: "mobiuslabsgmbh/faster-whisper-large-v3-turbo")
-    - response_format (str): The format of the response (default: "text")
-    - server_url (str): URL of the Whisper API server (default: "http://192.168.1.65:8000")
 
     Returns:
     - The transcription result if successful
     - None if an error occurred
     """
-    endpoint = f"{server_url}/v1/audio/transcriptions"
+    endpoint = f"{config.server_url}/v1/audio/transcriptions"
 
     files = {
         "file": open(audio_file, "rb")
     }
 
     data = {
-        "model": model,
-        "response_format": response_format
+        "model": config.model,
+        "response_format": config.response_format
     }
 
     try:
@@ -128,7 +122,7 @@ def process_audio_and_detect_speech():
             print(f"\r{status}: {meter} {db:.1f} dB", end="")
             
             # Check if we're above the threshold
-            if db >= DB_THRESHOLD:
+            if db >= config.DB_THRESHOLD:
                 if not is_recording:
                     print("\nSpeech detected, recording...")
                     is_recording = True
@@ -148,16 +142,16 @@ def process_audio_and_detect_speech():
                 
                 if silence_start_time is None:
                     silence_start_time = time.time()
-                elif (time.time() - silence_start_time) * 1000 >= SILENCE_THRESHOLD_MS:
+                elif (time.time() - silence_start_time) * 1000 >= config.SILENCE_THRESHOLD_MS:
                     # Silence duration exceeded threshold, stop recording
                     recording_length_sec = len(recorded_audio) / (SAMPLE_RATE * SAMPLE_WIDTH)
                     
                     print(f"\nSilence detected, recording length: {recording_length_sec:.2f} seconds")
                     
-                    if recording_length_sec >= MIN_RECORDING_LENGTH_SEC:
+                    if recording_length_sec >= config.MIN_RECORDING_LENGTH_SEC:
                         # Generate filename with timestamp
                         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                        filename = os.path.join(RECORDINGS_DIR, f"recording_{timestamp}.wav")
+                        filename = os.path.join(config.RECORDINGS_DIR, f"recording_{timestamp}.wav")
                         
                         # Save the recording
                         save_audio_to_file(recorded_audio, filename)
@@ -194,7 +188,7 @@ def process_audio_and_detect_speech():
 def main():
     """Main function to run the speech detection and transcription system."""
     print(f"Speech Detection and Transcription System")
-    print(f"Speech threshold: {DB_THRESHOLD} dB, Silence threshold: {SILENCE_THRESHOLD_MS} ms")
+    print(f"Speech threshold: {config.DB_THRESHOLD} dB, Silence threshold: {config.SILENCE_THRESHOLD_MS} ms")
     print("Press Ctrl+C to exit")
     
     try:
