@@ -57,14 +57,10 @@ def process_command(transcript):
         # Check if the command or any of its aliases appears in the transcript
         if cmd["command"] in transcript or any(alias in transcript for alias in cmd["aliases"]):
             print(f"Command recognized: {cmd['command']}")
-            print(f"Executing action: {cmd['action']} on {cmd['entity_id']}")
-            
-            # Entity ID and action are directly available in the command dictionary
-            entity_id = cmd["entity_id"]
-            action = cmd["action"]
+            print(f"Executing action: {cmd['service']} on {cmd['entity_id']}")
             
             # Send the command to Home Assistant
-            return send_homeassistant_command(entity_id, action)
+            return send_homeassistant_command(cmd["entity_id"], cmd["service"])
     
     print(f"No matching command found for: '{transcript}'")
     return False
