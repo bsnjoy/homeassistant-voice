@@ -54,8 +54,8 @@ def process_command(transcript):
     transcript = transcript.lower().strip()
     
     for cmd in config.commands:
-        # Check if transcript matches the primary command or any of its aliases
-        if transcript == cmd["command"] or transcript in cmd["aliases"]:
+        # Check if the command or any of its aliases appears in the transcript
+        if cmd["command"] in transcript or any(alias in transcript for alias in cmd["aliases"]):
             print(f"Command recognized: {cmd['command']}")
             print(f"Executing action: {cmd['action']} on {cmd['entity_id']}")
             
