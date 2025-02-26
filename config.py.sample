@@ -54,11 +54,18 @@ room_aliases = {
 # Default room if not specified
 default_room = "office"
 
-# Device to entity mapping
-device_entities = {
-    "ac": {
-        "office": "climate.faikin_office_mqtt_hvac",
-        # Add more rooms as needed
-        # "bedroom": "climate.bedroom_ac",
-    }
+# Room to device mapping
+# Structure: room -> device -> entity_id
+room_entities = {
+    "office": {
+        "ac": "climate.faikin_office_mqtt_hvac",
+        # Add more devices as needed
+        # "light": "light.office_main",
+        # "tv": "media_player.office_tv",
+    },
+    # Add more rooms as needed
+    # "bedroom": {
+    #     "ac": "climate.bedroom_ac",
+    #     "light": "light.bedroom_main",
+    # },
 }
