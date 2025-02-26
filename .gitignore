@@ -1,1 +1,6 @@
 recordings/
+venv/
+.ven/
+.DS_Store
+*.log
+__pycache__/
