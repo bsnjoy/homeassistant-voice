@@ -51,7 +51,7 @@ def process_command(transcript):
         return False
     
     # Check if we have the necessary configuration
-    required_attrs = ['action_aliases', 'device_aliases', 'device_entities', 'default_room']
+    required_attrs = ['action_aliases', 'device_aliases', 'room_entities', 'default_room']
     if not all(hasattr(config, attr) for attr in required_attrs):
         print("Missing required configuration attributes")
         return False
@@ -91,13 +91,13 @@ def process_command(transcript):
             print(f"Room recognized: {room}")
             break
     
-    # Get entity ID for the device in the specified room
-    if device not in config.device_entities or room not in config.device_entities[device]:
+    # Get entity ID for the device in the specified room using the new structure
+    if room not in config.room_entities or device not in config.room_entities[room]:
         print(f"No entity found for {device} in {room}")
         return False
     
-    entity_id = config.device_entities[device][room]
-    print(f"Executing action: {action} on {entity_id}")
+    entity_id = config.room_entities[room][device]
+    print(f"Executing action: {action} on {entity_id} in {room}")
     
     # Send the command to Home Assistant
     return send_homeassistant_command(entity_id, action)
