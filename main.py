@@ -10,11 +10,6 @@ import config
 import audio_utils
 import homeassistant_utils
 
-# Configuration is in config.py
-
-# Ensure recordings directory exists
-os.makedirs(config.RECORDINGS_DIR, exist_ok=True)
-
 def process_audio_and_detect_speech():
     """
     Process audio stream, detect speech, and transcribe when appropriate.
