@@ -38,8 +38,8 @@ def send_homeassistant_command(entity_id, service):
 
 def process_command(transcript):
     """
-    Process the transcribed text to check if it matches any command or its aliases.
-    If a match is found, execute the corresponding action.
+    Process the transcribed text to check if it matches action, device, and room aliases.
+    If matches are found, execute the corresponding action on the device in the specified room.
     
     Args:
         transcript (str): The transcribed text to process
@@ -47,20 +47,57 @@ def process_command(transcript):
     Returns:
         bool: True if a command was matched and executed, False otherwise
     """
-    if not transcript or not hasattr(config, 'commands'):
+    if not transcript:
+        return False
+    
+    # Check if we have the necessary configuration
+    required_attrs = ['action_aliases', 'device_aliases', 'device_entities', 'default_room']
+    if not all(hasattr(config, attr) for attr in required_attrs):
+        print("Missing required configuration attributes")
         return False
     
     # Convert transcript to lowercase for case-insensitive matching
     transcript = transcript.lower().strip()
     
-    for cmd in config.commands:
-        # Check if the command or any of its aliases appears in the transcript
-        if cmd["command"] in transcript or any(alias in transcript for alias in cmd["aliases"]):
-            print(f"Command recognized: {cmd['command']}")
-            print(f"Executing action: {cmd['service']} on {cmd['entity_id']}")
-            
-            # Send the command to Home Assistant
-            return send_homeassistant_command(cmd["entity_id"], cmd["service"])
+    # Find action in transcript
+    action = None
+    for action_name, aliases in config.action_aliases.items():
+        if any(alias in transcript for alias in aliases):
+            action = action_name
+            print(f"Action recognized: {action}")
+            break
     
-    print(f"No matching command found for: '{transcript}'")
-    return False
+    if not action:
+        print("No action recognized in transcript")
+        return False
+    
+    # Find device in transcript
+    device = None
+    for device_name, aliases in config.device_aliases.items():
+        if any(alias in transcript for alias in aliases):
+            device = device_name
+            print(f"Device recognized: {device}")
+            break
+    
+    if not device:
+        print("No device recognized in transcript")
+        return False
+    
+    # Find room in transcript (optional)
+    room = config.default_room
+    for room_name, aliases in config.room_aliases.items():
+        if any(alias in transcript for alias in aliases):
+            room = room_name
+            print(f"Room recognized: {room}")
+            break
+    
+    # Get entity ID for the device in the specified room
+    if device not in config.device_entities or room not in config.device_entities[device]:
+        print(f"No entity found for {device} in {room}")
+        return False
+    
+    entity_id = config.device_entities[device][room]
+    print(f"Executing action: {action} on {entity_id}")
+    
+    # Send the command to Home Assistant
+    return send_homeassistant_command(entity_id, action)
