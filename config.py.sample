@@ -6,8 +6,38 @@ model = "mobiuslabsgmbh/faster-whisper-large-v3-turbo"
 response_format = "text"
 server_url = "http://192.168.1.65:8000"
 
+# Home Assistant configuration
+homeassistant_url = "http://192.168.1.66:8123"
+homeassistant_token = "YOUR SAMPLE TOKEN"
+
 # Audio recording configuration
 RECORDINGS_DIR = "recordings"
 DB_THRESHOLD = 50  # Default speech detection threshold in dB
 SILENCE_THRESHOLD_MS = 500  # Default silence duration threshold in ms
 MIN_RECORDING_LENGTH_SEC = 1.0  # Minimum recording length to process
+
+# Audio format configuration
+SAMPLE_RATE = 16000
+SAMPLE_WIDTH = 2  # 16-bit audio (S16_LE)
+CHANNELS = 1
+
+# Commands configuration
+# Each command has:
+# - command: The primary command text
+# - aliases: Alternative phrasings or translations
+# - entity_id: The Home Assistant entity ID to control
+# - action: The action to perform (e.g. "turn_on", "turn_off")
+commands = [
+    {
+        "command": "turn on ac",
+        "aliases": ["turn on air conditioner", "включи кондицонер", "включи кондер"],
+        "entity_id": "climate.faikin_office_mqtt_hvac",
+        "action": "turn_on"
+    },
+    {
+        "command": "turn off ac",
+        "aliases": ["turn off air conditioner", "выключи кондицонер", "выключи кондер"],
+        "entity_id": "climate.faikin_office_mqtt_hvac",
+        "action": "turn_off"
+    }
+]

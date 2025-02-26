@@ -2,16 +2,13 @@
 import sys
 import time
 import os
-import json
-import socket
-import struct
 import datetime
 import numpy as np
 from threading import Thread
 from queue import Queue, Empty
-import requests
 import config
 import audio_utils
+import homeassistant_utils
 
 # Configuration is in config.py
 
@@ -116,15 +113,19 @@ def process_audio_and_detect_speech():
     
     return None
 
+
 def main():
     """Main function to run the speech detection and transcription system."""
     print(f"Speech Detection and Transcription System")
     print(f"Speech threshold: {config.DB_THRESHOLD} dB, Silence threshold: {config.SILENCE_THRESHOLD_MS} ms")
+    print(f"Loaded {len(config.commands) if hasattr(config, 'commands') else 0} commands")
     print("Press Ctrl+C to exit")
     
     try:
         while True:
             transcript = process_audio_and_detect_speech()
+            if transcript:
+                homeassistant_utils.process_command(transcript)
             # Give a small pause between detection cycles
             time.sleep(0.5)
     except KeyboardInterrupt:
