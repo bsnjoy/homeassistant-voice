@@ -5,6 +5,7 @@ import wave
 import os
 import requests
 import datetime
+import time
 import config
 
 # Audio configuration is in config.py
@@ -98,6 +99,31 @@ def display_volume(db, is_recording):
     
     # Update previous state
     display_volume.prev_recording = is_recording
+
+def play_audio(audio_file):
+    """
+    Play an audio file using the system's audio player.
+    
+    Parameters:
+    - audio_file (str): Path to the audio file to play
+    
+    Returns:
+    - bool: True if playback was successful, False otherwise
+    """
+    try:
+        # Use the audio play command from config
+        cmd = config.AUDIO_PLAY_CMD + [audio_file]
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+        # Wait for playback to complete
+        process.wait()
+        return True
+    except Exception as e:
+        print(f"Error playing audio: {e}")
+        return False
 
 def send_to_whisper(audio_file):
     """

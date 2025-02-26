@@ -123,6 +123,10 @@ def process_audio_and_detect_speech(capture_thread):
     
     Parameters:
     - capture_thread: The AudioCaptureThread instance
+    
+    Returns:
+    - transcript: The transcribed text if successful, None otherwise
+    - is_paused: Boolean indicating if processing was paused (e.g., for audio playback)
     """
     # Initialize variables
     is_recording = False
@@ -223,7 +227,18 @@ def main():
         while True:
             transcript = process_audio_and_detect_speech(capture_thread)
             if transcript:
+                # Process the command and get the result
+                # Temporarily set recording state to false during command processing
+                # This ensures the volume meter shows LISTENING instead of RECORDING
+                capture_thread.set_recording_state(False)
+                
+                # Process the command - this will play the confirmation sound if enabled
                 homeassistant_utils.process_command(transcript)
+                
+                # Give a small pause after command execution and sound playback
+                # This ensures we don't immediately start recording again
+                time.sleep(0.5)
+            
             # Give a small pause between detection cycles
             time.sleep(0.1)
     except KeyboardInterrupt:

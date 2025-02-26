@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import requests
 import config
+import os
+import audio_utils
 
 def send_homeassistant_command(entity_id, service):
     """
@@ -100,4 +102,17 @@ def process_command(transcript):
     print(f"Executing action: {action} on {entity_id} in {room}")
     
     # Send the command to Home Assistant
-    return send_homeassistant_command(entity_id, action)
+    success = send_homeassistant_command(entity_id, action)
+    
+    # Play confirmation sound if command was successful and feature is enabled
+    if success and hasattr(config, 'PLAY_CONFIRMATION_SOUND') and config.PLAY_CONFIRMATION_SOUND:
+        if hasattr(config, 'CONFIRMATION_SOUND') and config.CONFIRMATION_SOUND:
+            sound_path = config.CONFIRMATION_SOUND
+            # Check if the sound file exists
+            if os.path.exists(sound_path):
+                print(f"Playing confirmation sound: {sound_path}")
+                audio_utils.play_audio(sound_path)
+            else:
+                print(f"Warning: Confirmation sound file not found: {sound_path}")
+    
+    return success

@@ -17,6 +17,12 @@ SILENCE_THRESHOLD_MS = 500  # Default silence duration threshold in ms
 MIN_RECORDING_LENGTH_SEC = 1.0  # Minimum recording length to process
 PREROLL_DURATION_SEC = 0.5  # Duration of audio to include before speech detection (in seconds)
 
+# Confirmation sound configuration
+CONFIRMATION_SOUND = "sounds/command_completed.wav"  # Path to sound file played after command execution
+PLAY_CONFIRMATION_SOUND = True  # Whether to play confirmation sound after command execution
+# Audio playback command
+AUDIO_PLAY_CMD = ["paplay", "--property=media.role=announce", "--rate=44100", "--channels=1", "--format=s16le", "--raw", "--latency-msec", "10"]
+
 # Audio format configuration
 SAMPLE_RATE = 16000
 SAMPLE_WIDTH = 2  # 16-bit audio (S16_LE)
