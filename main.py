@@ -49,8 +49,8 @@ def process_audio_and_detect_speech():
                 if not is_recording:
                     print("\nSpeech detected, recording...")
                     is_recording = True
-                    # Start with some pre-roll from the buffer (last 200ms)
-                    preroll_size = min(len(audio_buffer), int(config.SAMPLE_RATE * 0.2) * config.SAMPLE_WIDTH)
+                    # Start with some pre-roll from the buffer
+                    preroll_size = min(len(audio_buffer), int(config.SAMPLE_RATE * config.PREROLL_DURATION_SEC) * config.SAMPLE_WIDTH)
                     recorded_audio = bytearray(audio_buffer[-preroll_size:])
                 
                 # Reset silence timer

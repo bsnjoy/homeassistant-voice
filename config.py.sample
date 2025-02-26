@@ -15,6 +15,7 @@ RECORDINGS_DIR = "recordings"
 DB_THRESHOLD = 50  # Default speech detection threshold in dB
 SILENCE_THRESHOLD_MS = 500  # Default silence duration threshold in ms
 MIN_RECORDING_LENGTH_SEC = 1.0  # Minimum recording length to process
+PREROLL_DURATION_SEC = 0.5  # Duration of audio to include before speech detection (in seconds)
 
 # Audio format configuration
 SAMPLE_RATE = 16000
