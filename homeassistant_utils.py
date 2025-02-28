@@ -86,19 +86,37 @@ def process_command(transcript):
         return False
     
     # Find room in transcript (optional)
+    room_specified = False
     room = config.default_room
     for room_name, aliases in config.room_aliases.items():
         if any(alias in transcript for alias in aliases):
             room = room_name
+            room_specified = True
             print(f"Room recognized: {room}")
             break
     
-    # Get entity ID for the device in the specified room using the new structure
-    if room not in config.room_entities or device not in config.room_entities[room]:
-        print(f"No entity found for {device} in {room}")
-        return False
+    # Check if this device can be used without specifying a room
+    if not room_specified and hasattr(config, 'devices_without_room') and device in config.devices_without_room:
+        # Search for the device across all rooms
+        entity_id = None
+        for search_room, devices in config.room_entities.items():
+            if device in devices:
+                entity_id = devices[device]
+                room = search_room
+                print(f"Found {device} in {room} without room specification")
+                break
+        
+        if entity_id is None:
+            print(f"No entity found for {device} in any room")
+            return False
+    else:
+        # Get entity ID for the device in the specified room
+        if room not in config.room_entities or device not in config.room_entities[room]:
+            print(f"No entity found for {device} in {room}")
+            return False
+        
+        entity_id = config.room_entities[room][device]
     
-    entity_id = config.room_entities[room][device]
     print(f"Executing action: {action} on {entity_id} in {room}")
     
     # Send the command to Home Assistant

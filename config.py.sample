@@ -68,6 +68,10 @@ room_aliases = {
 # Default room if not specified
 default_room = "office"
 
+# Devices that can be called without specifying a room
+# These devices will be searched across all rooms
+devices_without_room = ["ac"]
+
 # Room to device mapping
 # Structure: room -> device -> entity_id
 room_entities = {
