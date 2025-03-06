@@ -4,6 +4,7 @@ import time
 import os
 import datetime
 import numpy as np
+import signal
 from threading import Thread, Event, Lock
 from collections import deque
 import config
@@ -116,17 +117,17 @@ class AudioCaptureThread(Thread):
             self.process.terminate()
 
 
-def process_audio_and_detect_speech(capture_thread):
+def process_audio_and_detect_speech(capture_thread, show_volume=True):
     """
     Process audio from the capture thread, detect speech, and transcribe when appropriate.
     Returns when a complete transcription cycle is done or no speech is detected.
     
     Parameters:
     - capture_thread: The AudioCaptureThread instance
+    - show_volume: Whether to display the volume meter
     
     Returns:
     - transcript: The transcribed text if successful, None otherwise
-    - is_paused: Boolean indicating if processing was paused (e.g., for audio playback)
     """
     # Initialize variables
     is_recording = False
@@ -143,9 +144,9 @@ def process_audio_and_detect_speech(capture_thread):
             # Get current dB level from capture thread
             current_db = capture_thread.get_current_db()
             
-            # Update display at regular intervals
+            # Update display at regular intervals if enabled
             current_time = time.time()
-            if current_time - last_display_time >= display_interval:
+            if show_volume and current_time - last_display_time >= display_interval:
                 audio_utils.display_volume(current_db, is_recording)
                 last_display_time = current_time
             
@@ -209,15 +210,41 @@ def process_audio_and_detect_speech(capture_thread):
     return None
 
 
+def is_running_as_service():
+    """Check if the program is running as a systemd service."""
+    # Check for INVOCATION_ID environment variable which is set by systemd
+    return 'INVOCATION_ID' in os.environ or 'JOURNAL_STREAM' in os.environ
+
+def signal_handler(sig, frame):
+    """Handle signals like SIGTERM for graceful shutdown."""
+    print("\nReceived signal to terminate. Shutting down gracefully...")
+    if 'capture_thread' in globals():
+        globals()['capture_thread'].stop()
+        globals()['capture_thread'].join(timeout=1.0)
+    sys.exit(0)
+
 def main():
     """Main function to run the speech detection and transcription system."""
+    # Register signal handlers for graceful shutdown
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
+    
+    # Check if running as a service
+    running_as_service = is_running_as_service()
+    
     print(f"Speech Detection and Transcription System")
+    if running_as_service:
+        print("Running as a systemd service")
+    else:
+        print("Running as a standalone application")
     print(f"Speech threshold: {config.DB_THRESHOLD} dB, Silence threshold: {config.SILENCE_THRESHOLD_MS} ms")
     print(f"Loaded {len(config.commands) if hasattr(config, 'commands') else 0} commands")
-    print("Press Ctrl+C to exit")
+    if not running_as_service:
+        print("Press Ctrl+C to exit")
     
     # Create and start capture thread with ring buffer
     # Buffer 10 seconds of audio (adjust as needed)
+    global capture_thread  # Make it accessible to signal handler
     capture_thread = AudioCaptureThread(buffer_duration=10.0, chunk_duration=0.05)
     capture_thread.start()
     
@@ -225,7 +252,7 @@ def main():
     
     try:
         while True:
-            transcript = process_audio_and_detect_speech(capture_thread)
+            transcript = process_audio_and_detect_speech(capture_thread, show_volume=not running_as_service)
             if transcript:
                 # Process the command and get the result
                 # Temporarily set recording state to false during command processing
