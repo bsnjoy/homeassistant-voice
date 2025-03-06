@@ -1,0 +1,17 @@
+[Unit]
+Description=Home Assistant Voice Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/homeassistant-voice
+ExecStart=/bin/bash -c 'source /home/pi/homeassistant-voice/.venv/bin/activate && python /home/pi/homeassistant-voice/main.py'
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
