@@ -155,6 +155,19 @@ The program will start listening for voice commands. When it detects speech, it 
    ```
    sudo systemctl status homeassistant-voice.service
    ```
+5. Check logs:
+   ```
+   sudo journalctl -u homeassistant-voice.service
+   
+   # To see only the most recent logs:
+   sudo journalctl -u homeassistant-voice.service -n 50
+   
+   # To follow the logs in real-time (like tail -f):
+   sudo journalctl -u homeassistant-voice.service -f
+   
+   # To see logs since the last boot:
+   sudo journalctl -u homeassistant-voice.service -b
+   ```
 
 ### Testing Transcription
 
