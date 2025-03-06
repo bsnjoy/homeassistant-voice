@@ -2,7 +2,11 @@
 # Configuration file for speech detection and transcription system
 
 # Whisper API configuration
+# All config options in def transcribe_file in
+# https://github.com/speaches-ai/speaches/blob/master/src/speaches/routers/stt.py
 model = "mobiuslabsgmbh/faster-whisper-large-v3-turbo"
+prompt = "включи выключи свет в офисе"
+language = "ru"
 response_format = "text"
 server_url = "http://192.168.1.65:8000"
 
@@ -39,6 +43,7 @@ CHANNELS = 1
 # AUDIO_RECORD_CMD = ["parecord", "--property=media.role=phone", f"--rate={SAMPLE_RATE}", f"--channels={CHANNELS}", "--format=s16le", "--raw", "--latency-msec", "10"]
 # Audio recording command for ALSA (use this if PulseAudio is not available)
 AUDIO_RECORD_CMD = ["arecord", "-D", "dsnoop:CARD=MS,DEV=0", "-r", str(SAMPLE_RATE), "-c", str(CHANNELS), "-f", "S16_LE", "-t", "raw"]
+
 
 
 # Commands configuration with separate aliases for actions, devices, and rooms

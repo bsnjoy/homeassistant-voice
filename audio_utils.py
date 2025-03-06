@@ -181,7 +181,10 @@ def send_to_whisper(audio_file):
 
     data = {
         "model": config.model,
-        "response_format": config.response_format
+        "response_format": config.response_format,
+        "prompt": config.prompt,
+        "language": config.language,
+        "vad_filter": True,
     }
 
     try:
