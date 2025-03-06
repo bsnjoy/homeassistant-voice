@@ -11,6 +11,15 @@ import config
 import audio_utils
 import homeassistant_utils
 
+# Force stdout and stderr to be unbuffered to ensure logs appear immediately in systemd journal
+sys.stdout.reconfigure(line_buffering=True)
+sys.stderr.reconfigure(line_buffering=True)
+
+# Define a logging function that ensures output is flushed immediately
+def log_message(message):
+    """Log a message to stdout and ensure it's flushed immediately."""
+    print(message, flush=True)
+
 class AudioCaptureThread(Thread):
     """Thread class for capturing audio continuously in the background using a ring buffer."""
     
@@ -66,7 +75,7 @@ class AudioCaptureThread(Thread):
                 time.sleep(0.001)
                 
         except Exception as e:
-            print(f"Error in audio capture thread: {e}")
+            log_message(f"Error in audio capture thread: {e}")
         finally:
             if self.process:
                 self.process.terminate()
@@ -153,7 +162,7 @@ def process_audio_and_detect_speech(capture_thread, show_volume=True):
             # Check if we're above the threshold
             if current_db >= config.DB_THRESHOLD:
                 if not is_recording:
-                    print("\nSpeech detected, recording...")
+                    log_message("\nSpeech detected, recording...")
                     is_recording = True
                     capture_thread.set_recording_state(True)
                     
@@ -174,17 +183,17 @@ def process_audio_and_detect_speech(capture_thread, show_volume=True):
                     recorded_audio = capture_thread.get_audio_segment(speech_start_time, current_time)
                     recording_length_sec = len(recorded_audio) / (config.SAMPLE_RATE * config.SAMPLE_WIDTH)
                     
-                    print(f"\nSilence detected, recording length: {recording_length_sec:.2f} seconds")
+                    log_message(f"\nSilence detected, recording length: {recording_length_sec:.2f} seconds")
                     
                     if recording_length_sec >= config.MIN_RECORDING_LENGTH_SEC:
                         # Save the recording with auto-generated filename
                         saved_path = audio_utils.save_audio_to_file(recorded_audio)
-                        print(f"Saved recording to {saved_path}")
+                        log_message(f"Saved recording to {saved_path}")
                         
                         # Send to server for transcription
-                        print("Transcribing...")
+                        log_message("Transcribing...")
                         transcript = audio_utils.send_to_whisper(saved_path)
-                        print(f"\nTranscription: {transcript}")
+                        log_message(f"\nTranscription: {transcript}")
                         
                         # Reset recording state
                         is_recording = False
@@ -193,7 +202,7 @@ def process_audio_and_detect_speech(capture_thread, show_volume=True):
                         # Return the transcript
                         return transcript
                     else:
-                        print("Recording too short, discarding")
+                        log_message("Recording too short, discarding")
                     
                     # Reset recording state
                     is_recording = False
@@ -217,7 +226,7 @@ def is_running_as_service():
 
 def signal_handler(sig, frame):
     """Handle signals like SIGTERM for graceful shutdown."""
-    print("\nReceived signal to terminate. Shutting down gracefully...")
+    log_message("\nReceived signal to terminate. Shutting down gracefully...")
     if 'capture_thread' in globals():
         globals()['capture_thread'].stop()
         globals()['capture_thread'].join(timeout=1.0)
@@ -232,15 +241,15 @@ def main():
     # Check if running as a service
     running_as_service = is_running_as_service()
     
-    print(f"Speech Detection and Transcription System")
+    log_message(f"Speech Detection and Transcription System")
     if running_as_service:
-        print("Running as a systemd service")
+        log_message("Running as a systemd service")
     else:
-        print("Running as a standalone application")
-    print(f"Speech threshold: {config.DB_THRESHOLD} dB, Silence threshold: {config.SILENCE_THRESHOLD_MS} ms")
-    print(f"Loaded {len(config.commands) if hasattr(config, 'commands') else 0} commands")
+        log_message("Running as a standalone application")
+    log_message(f"Speech threshold: {config.DB_THRESHOLD} dB, Silence threshold: {config.SILENCE_THRESHOLD_MS} ms")
+    log_message(f"Loaded {len(config.commands) if hasattr(config, 'commands') else 0} commands")
     if not running_as_service:
-        print("Press Ctrl+C to exit")
+        log_message("Press Ctrl+C to exit")
     
     # Create and start capture thread with ring buffer
     # Buffer 10 seconds of audio (adjust as needed)
@@ -248,7 +257,7 @@ def main():
     capture_thread = AudioCaptureThread(buffer_duration=10.0, chunk_duration=0.05)
     capture_thread.start()
     
-    print("Audio capture thread started with ring buffer")
+    log_message("Audio capture thread started with ring buffer")
     
     try:
         while True:
@@ -269,7 +278,7 @@ def main():
             # Give a small pause between detection cycles
             time.sleep(0.1)
     except KeyboardInterrupt:
-        print("\nExiting")
+        log_message("\nExiting")
         # Stop the capture thread
         capture_thread.stop()
         capture_thread.join(timeout=1.0)
