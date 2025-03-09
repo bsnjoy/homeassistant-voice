@@ -170,8 +170,10 @@ def send_to_whisper(audio_file):
     - The transcription result if successful
     - None if an error occurred
     """
-    # Normalize the audio before transcription
-    normalized_file = normalize_audio(audio_file)
+    # Note: Normalization is now handled in main.py for timing purposes
+    normalized_file = audio_file
+    if not normalized_file.endswith("_normalized.wav"):
+        normalized_file = normalize_audio(audio_file)
     
     endpoint = f"{config.server_url}/v1/audio/transcriptions"
 

@@ -183,7 +183,10 @@ def process_audio_and_detect_speech(capture_thread, show_volume=True):
                     recorded_audio = capture_thread.get_audio_segment(speech_start_time, current_time)
                     recording_length_sec = len(recorded_audio) / (config.SAMPLE_RATE * config.SAMPLE_WIDTH)
                     
+                    silence_end_time = time.time()
+                    silence_detection_time = (silence_end_time - silence_start_time) * 1000
                     log_message(f"\nSilence detected, recording length: {recording_length_sec:.2f} seconds")
+                    log_message(f"1. Period after speech ended (silence detection): {silence_detection_time:.2f} ms")
                     
                     if recording_length_sec >= config.MIN_RECORDING_LENGTH_SEC:
                         # Save the recording with auto-generated filename
@@ -192,7 +195,17 @@ def process_audio_and_detect_speech(capture_thread, show_volume=True):
                         
                         # Send to server for transcription
                         log_message("Transcribing...")
+                        normalize_start_time = time.time()
+                        normalized_file = audio_utils.normalize_audio(saved_path)
+                        normalize_end_time = time.time()
+                        normalize_duration = normalize_end_time - normalize_start_time
+                        log_message(f"2. Normalizing audio: {normalize_duration:.2f} seconds")
+                        
+                        transcribe_start_time = time.time()
                         transcript = audio_utils.send_to_whisper(saved_path)
+                        transcribe_end_time = time.time()
+                        transcribe_duration = transcribe_end_time - transcribe_start_time
+                        log_message(f"3. Transcribing audio: {transcribe_duration:.2f} seconds")
                         log_message(f"\nTranscription: {transcript}")
                         
                         # Reset recording state
@@ -269,7 +282,22 @@ def main():
                 capture_thread.set_recording_state(False)
                 
                 # Process the command - this will play the confirmation sound if enabled
-                homeassistant_utils.process_command(transcript)
+                api_start_time = time.time()
+                success = homeassistant_utils.process_command(transcript)
+                api_end_time = time.time()
+                api_duration = api_end_time - api_start_time
+                log_message(f"4. API request to HomeAssistant: {api_duration:.2f} seconds")
+                
+                # Measure time for playing confirmation sound
+                if success and hasattr(config, 'PLAY_CONFIRMATION_SOUND') and config.PLAY_CONFIRMATION_SOUND:
+                    if hasattr(config, 'CONFIRMATION_SOUND') and config.CONFIRMATION_SOUND:
+                        sound_path = config.CONFIRMATION_SOUND
+                        if os.path.exists(sound_path):
+                            sound_start_time = time.time()
+                            audio_utils.play_audio(sound_path)
+                            sound_end_time = time.time()
+                            sound_duration = sound_end_time - sound_start_time
+                            log_message(f"5. Playing audio that job is finished: {sound_duration:.2f} seconds")
                 
                 # Give a small pause after command execution and sound playback
                 # This ensures we don't immediately start recording again

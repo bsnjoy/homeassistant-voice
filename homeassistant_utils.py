@@ -122,15 +122,4 @@ def process_command(transcript):
     # Send the command to Home Assistant
     success = send_homeassistant_command(entity_id, action)
     
-    # Play confirmation sound if command was successful and feature is enabled
-    if success and hasattr(config, 'PLAY_CONFIRMATION_SOUND') and config.PLAY_CONFIRMATION_SOUND:
-        if hasattr(config, 'CONFIRMATION_SOUND') and config.CONFIRMATION_SOUND:
-            sound_path = config.CONFIRMATION_SOUND
-            # Check if the sound file exists
-            if os.path.exists(sound_path):
-                print(f"Playing confirmation sound: {sound_path}")
-                audio_utils.play_audio(sound_path)
-            else:
-                print(f"Warning: Confirmation sound file not found: {sound_path}")
-    
     return success
