@@ -246,7 +246,6 @@ def main():
     else:
         print("Running as a standalone application")
     print(f"Speech threshold: {config.DB_THRESHOLD} dB, Silence threshold: {config.SILENCE_THRESHOLD_MS} ms")
-    print(f"Loaded {len(config.commands) if hasattr(config, 'commands') else 0} commands")
     if not running_as_service:
         print("Press Ctrl+C to exit")
     

@@ -73,6 +73,7 @@ def process_ai_command(text):
         print("Failed to get response from OpenAI")
         return False
     
+    print(f"OpenAI response: {response}")
     # Play the response using TTS
     success = tts.play_tts_response(response)
     return success
