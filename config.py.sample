@@ -29,6 +29,8 @@ PLAY_CONFIRMATION_SOUND = True  # Whether to play confirmation sound after comma
 # AUDIO_PLAY_CMD = ["paplay", "--property=media.role=announce", "--rate=44100", "--channels=1", "--format=s16le", "--raw", "--latency-msec", "10"]
 # Audio recording command for ALSA (use this if PulseAudio is not available), for test in bash:
 # aplay -D plughw:CARD=MS,DEV=0 sounds/command_completed.wav
+# To get the list of available devices, run:
+# arecord -L
 AUDIO_PLAY_CMD = ["aplay", "-D", "plughw:CARD=MS,DEV=0", "-r", "44100", "-c", "1", "-f", "S16_LE", "-t", "raw"]
 
 # Audio normalization command using sox
