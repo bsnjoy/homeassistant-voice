@@ -2,6 +2,7 @@
 import subprocess
 import json
 import config
+from utils.russian_number_converter import convert_numbers_to_russian_words
 
 def play_tts_response(text):
     """
@@ -14,8 +15,10 @@ def play_tts_response(text):
         bool: True if successful, False otherwise
     """
     try:
+        optimized_text = convert_numbers_to_russian_words(text)
+
         # Prepare the JSON data for the TTS API
-        json_data = json.dumps({"text": text, "format": "wav", "streaming": "True", "seed": 1})
+        json_data = json.dumps({"text": optimized_text, "format": "wav", "streaming": "True", "seed": 1})
         
         # Construct the curl command
         curl_cmd = [
