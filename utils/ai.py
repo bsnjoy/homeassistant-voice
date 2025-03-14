@@ -39,7 +39,7 @@ def send_to_openai(text):
         response = client.chat.completions.create(
             model="gpt-4o",  # Using GPT-4o
             messages=[
-                {"role": "system", "content": f"You are Алиса, an AI assistant and a smart speaker (колонка). The current date and time is {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"},
+                {"role": "system", "content": f"You are Алиса, an AI assistant and a smart speaker (колонка). The current date and time is {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. All dates and numbers should be printed in text to read."},
                 {"role": "user", "content": text}
             ]
         )
