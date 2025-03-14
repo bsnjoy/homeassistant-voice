@@ -8,8 +8,9 @@ import signal
 from threading import Thread, Event, Lock
 from collections import deque
 import config
-import audio_utils
-import homeassistant_utils
+from utils import audio
+from utils import homeassistant
+from utils import ai
 
 # Force stdout and stderr to be unbuffered to ensure logs appear immediately in systemd journal
 sys.stdout.reconfigure(line_buffering=True)
@@ -49,7 +50,7 @@ class AudioCaptureThread(Thread):
     
     def run(self):
         """Main method to run the thread."""
-        self.process = audio_utils.get_audio_stream()
+        self.process = audio.get_audio_stream()
         
         try:
             while not self.stop_event.is_set():
@@ -63,8 +64,8 @@ class AudioCaptureThread(Thread):
                 
                 # Calculate audio metrics for monitoring
                 samples = np.frombuffer(audio_data, dtype=np.int16)
-                rms = audio_utils.rms_from_samples(samples)
-                db = audio_utils.db_from_rms(rms)
+                rms = audio.rms_from_samples(samples)
+                db = audio.db_from_rms(rms)
                 self.current_db = db
                 
                 # Add to ring buffer with timestamp
@@ -156,7 +157,7 @@ def process_audio_and_detect_speech(capture_thread, show_volume=True):
             # Update display at regular intervals if enabled
             current_time = time.time()
             if show_volume and current_time - last_display_time >= display_interval:
-                audio_utils.display_volume(current_db, is_recording)
+                audio.display_volume(current_db, is_recording)
                 last_display_time = current_time
             
             # Check if we're above the threshold
@@ -190,19 +191,19 @@ def process_audio_and_detect_speech(capture_thread, show_volume=True):
                     
                     if recording_length_sec >= config.MIN_RECORDING_LENGTH_SEC:
                         # Save the recording with auto-generated filename
-                        saved_path = audio_utils.save_audio_to_file(recorded_audio)
+                        saved_path = audio.save_audio_to_file(recorded_audio)
                         log_message(f"Saved recording to {saved_path}")
                         
                         # Send to server for transcription
                         log_message("Transcribing...")
                         normalize_start_time = time.time()
-                        normalized_file = audio_utils.normalize_audio(saved_path)
+                        normalized_file = audio.normalize_audio(saved_path)
                         normalize_end_time = time.time()
                         normalize_duration = normalize_end_time - normalize_start_time
                         log_message(f"2. Normalizing audio: {normalize_duration:.2f} seconds")
                         
                         transcribe_start_time = time.time()
-                        transcript = audio_utils.send_to_whisper(saved_path)
+                        transcript = audio.send_to_whisper(saved_path)
                         transcribe_end_time = time.time()
                         transcribe_duration = transcribe_end_time - transcribe_start_time
                         log_message(f"3. Transcribing audio: {transcribe_duration:.2f} seconds")
@@ -281,12 +282,28 @@ def main():
                 # This ensures the volume meter shows LISTENING instead of RECORDING
                 capture_thread.set_recording_state(False)
                 
-                # Process the command - this will play the confirmation sound if enabled
-                api_start_time = time.time()
-                success = homeassistant_utils.process_command(transcript)
-                api_end_time = time.time()
-                api_duration = api_end_time - api_start_time
-                log_message(f"4. API request to HomeAssistant: {api_duration:.2f} seconds")
+                # Check if the command starts with one of the AI assistant names
+                is_ai_command = False
+                for name in config.ai_assistant_names:
+                    if transcript.lower().startswith(name.lower()):
+                        is_ai_command = True
+                        break
+                
+                if is_ai_command:
+                    # Process as an AI command
+                    log_message("Processing as AI command...")
+                    api_start_time = time.time()
+                    success = ai.process_ai_command(transcript)
+                    api_end_time = time.time()
+                    api_duration = api_end_time - api_start_time
+                    log_message(f"4. API request to OpenAI and TTS: {api_duration:.2f} seconds")
+                else:
+                    # Process as a Home Assistant command
+                    api_start_time = time.time()
+                    success = homeassistant.process_command(transcript)
+                    api_end_time = time.time()
+                    api_duration = api_end_time - api_start_time
+                    log_message(f"4. API request to HomeAssistant: {api_duration:.2f} seconds")
                 
                 # Measure time for playing confirmation sound
                 if success and hasattr(config, 'PLAY_CONFIRMATION_SOUND') and config.PLAY_CONFIRMATION_SOUND:
@@ -294,7 +311,7 @@ def main():
                         sound_path = config.CONFIRMATION_SOUND
                         if os.path.exists(sound_path):
                             sound_start_time = time.time()
-                            audio_utils.play_audio(sound_path)
+                            audio.play_audio(sound_path)
                             sound_end_time = time.time()
                             sound_duration = sound_end_time - sound_start_time
                             log_message(f"5. Playing audio that job is finished: {sound_duration:.2f} seconds")

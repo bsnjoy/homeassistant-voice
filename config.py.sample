@@ -46,7 +46,8 @@ CHANNELS = 1
 # Audio recording command for ALSA (use this if PulseAudio is not available)
 AUDIO_RECORD_CMD = ["arecord", "-D", "dsnoop:CARD=MS,DEV=0", "-r", str(SAMPLE_RATE), "-c", str(CHANNELS), "-f", "S16_LE", "-t", "raw"]
 
-
+# AI assistant names for wake word detection. The first name is used as the default wake word
+ai_assistant_names = ["умник", "бобер", "бобёр"]
 
 # Commands configuration with separate aliases for actions, devices, and rooms
 
