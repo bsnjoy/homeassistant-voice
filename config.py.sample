@@ -14,6 +14,8 @@ server_url = "http://192.168.1.65:8000"
 homeassistant_url = "http://192.168.1.66:8123"
 homeassistant_token = "YOUR SAMPLE TOKEN"
 
+OPENAI_API_KEY = "YOUR SAMPLE KEY"
+
 # Audio recording configuration
 RECORDINGS_DIR = "recordings"
 DB_THRESHOLD = 50  # Default speech detection threshold in dB
@@ -23,7 +25,7 @@ PREROLL_DURATION_SEC = 0.5  # Duration of audio to include before speech detecti
 
 # Confirmation sound configuration
 CONFIRMATION_SOUND = "sounds/command_completed.wav"  # Path to sound file played after command execution
-PLAY_CONFIRMATION_SOUND = True  # Whether to play confirmation sound after command execution
+
 # Audio playback command
 # Audio recording command for PulseAudio
 # AUDIO_PLAY_CMD = ["paplay", "--property=media.role=announce", "--rate=44100", "--channels=1", "--format=s16le", "--raw", "--latency-msec", "10"]

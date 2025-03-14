@@ -102,14 +102,19 @@ def display_volume(db, is_recording):
 
 def play_audio(audio_file):
     """
-    Play an audio file using the system's audio player.
+    Play an audio file using the system's audio player in the background.
     
     Parameters:
     - audio_file (str): Path to the audio file to play
     
     Returns:
-    - bool: True if playback was successful, False otherwise
+    - subprocess.Popen: The process object if successful, None otherwise
     """
+    # Check if file exists
+    if not os.path.isfile(audio_file):
+        print(f"Not playing audio: File does not exist: {audio_file}")
+        return None
+        
     try:
         # Use the audio play command from config
         cmd = config.AUDIO_PLAY_CMD + [audio_file]
@@ -118,12 +123,11 @@ def play_audio(audio_file):
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL
         )
-        # Wait for playback to complete
-        process.wait()
-        return True
+        # Return the process without waiting
+        return process
     except Exception as e:
         print(f"Error playing audio: {e}")
-        return False
+        return None
 
 def normalize_audio(input_file):
     """

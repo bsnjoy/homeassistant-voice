@@ -1,2 +1,5 @@
 numpy
 requests
+openai
+pytest
+pytest-mock

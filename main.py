@@ -306,15 +306,12 @@ def main():
                     log_message(f"4. API request to HomeAssistant: {api_duration:.2f} seconds")
                 
                 # Measure time for playing confirmation sound
-                if success and hasattr(config, 'PLAY_CONFIRMATION_SOUND') and config.PLAY_CONFIRMATION_SOUND:
-                    if hasattr(config, 'CONFIRMATION_SOUND') and config.CONFIRMATION_SOUND:
-                        sound_path = config.CONFIRMATION_SOUND
-                        if os.path.exists(sound_path):
-                            sound_start_time = time.time()
-                            audio.play_audio(sound_path)
-                            sound_end_time = time.time()
-                            sound_duration = sound_end_time - sound_start_time
-                            log_message(f"5. Playing audio that job is finished: {sound_duration:.2f} seconds")
+                if success:
+                    sound_start_time = time.time()
+                    audio.play_audio(config.CONFIRMATION_SOUND)
+                    sound_end_time = time.time()
+                    sound_duration = sound_end_time - sound_start_time
+                    log_message(f"5. Playing audio that job is finished: {sound_duration:.2f} seconds")
                 
                 # Give a small pause after command execution and sound playback
                 # This ensures we don't immediately start recording again

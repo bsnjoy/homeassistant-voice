@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 import requests
 import config
+import openai
 from utils import tts
+from datetime import datetime
 
 def send_to_openai(text):
     """
-    Send text to OpenAI to get a response.
+    Send text to OpenAI GPT-4o to get a response.
     
     Args:
         text (str): The text to send to OpenAI
@@ -13,26 +15,20 @@ def send_to_openai(text):
     Returns:
         str: The response from OpenAI, or None if an error occurred
     """
-    # This is a placeholder for the actual OpenAI API call
-    # You'll need to replace this with the actual API call to OpenAI
     try:
-        # Example OpenAI API call (replace with actual implementation)
-        # response = requests.post(
-        #     "https://api.openai.com/v1/chat/completions",
-        #     headers={
-        #         "Authorization": f"Bearer {config.openai_api_key}",
-        #         "Content-Type": "application/json"
-        #     },
-        #     json={
-        #         "model": "gpt-3.5-turbo",
-        #         "messages": [{"role": "user", "content": text}]
-        #     }
-        # )
-        # response.raise_for_status()
-        # return response.json()["choices"][0]["message"]["content"]
+        # Configure the OpenAI client with the API key
+        client = openai.OpenAI(api_key=config.OPENAI_API_KEY)
         
-        # For now, return a simple response for testing
-        return f"You said: {text}"
+        # Create the chat completion
+        response = client.chat.completions.create(
+            model="gpt-4o",  # Using GPT-4o
+            messages=[
+                {"role": "system", "content": f"You are Алиса, an AI assistant and a smart speaker (колонка). The current date and time is {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"},
+                {"role": "user", "content": text}
+            ]
+        )
+        
+        return response.choices[0].message.content
     except Exception as e:
         print(f"Error sending request to OpenAI: {e}")
         return None
