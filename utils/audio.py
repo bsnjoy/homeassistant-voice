@@ -7,6 +7,7 @@ import requests
 import datetime
 import time
 import config
+from utils.timing import time_execution
 
 # Audio configuration is in config.py
 
@@ -100,6 +101,7 @@ def display_volume(db, is_recording):
     # Update previous state
     display_volume.prev_recording = is_recording
 
+@time_execution(label="Playing audio that job is finished")
 def play_audio(audio_file):
     """
     Play an audio file using the system's audio player in the background.
@@ -129,6 +131,7 @@ def play_audio(audio_file):
         print(f"Error playing audio: {e}")
         return None
 
+@time_execution(label="Normalizing audio")
 def normalize_audio(input_file):
     """
     Normalize audio using sox to improve transcription quality.
@@ -162,6 +165,7 @@ def normalize_audio(input_file):
         print(f"Unexpected error during audio normalization: {e}")
         return input_file  # Return original file if normalization fails
 
+@time_execution(label="Transcribing audio")
 def send_to_whisper(audio_file):
     """
     Send an audio file to Whisper API for transcription.

@@ -23,8 +23,10 @@ SILENCE_THRESHOLD_MS = 500  # Default silence duration threshold in ms
 MIN_RECORDING_LENGTH_SEC = 1.0  # Minimum recording length to process
 PREROLL_DURATION_SEC = 0.5  # Duration of audio to include before speech detection (in seconds)
 
-# Confirmation sound configuration
-CONFIRMATION_SOUND = "sounds/command_completed.wav"  # Path to sound file played after command execution
+# Path to sound file played after command execution or blank for no sound
+HOMEASSISTANT_SOUND = "sounds/homeassistant.wav"
+AI_SOUND = "sounds/ai.wav"
+
 
 # Audio playback command
 # Audio recording command for PulseAudio

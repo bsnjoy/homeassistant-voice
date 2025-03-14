@@ -16,11 +16,6 @@ from utils import ai
 sys.stdout.reconfigure(line_buffering=True)
 sys.stderr.reconfigure(line_buffering=True)
 
-# Define a logging function that ensures output is flushed immediately
-def log_message(message):
-    """Log a message to stdout and ensure it's flushed immediately."""
-    print(message, flush=True)
-
 class AudioCaptureThread(Thread):
     """Thread class for capturing audio continuously in the background using a ring buffer."""
     
@@ -76,7 +71,7 @@ class AudioCaptureThread(Thread):
                 time.sleep(0.001)
                 
         except Exception as e:
-            log_message(f"Error in audio capture thread: {e}")
+            print(f"Error in audio capture thread: {e}")
         finally:
             if self.process:
                 self.process.terminate()
@@ -163,7 +158,7 @@ def process_audio_and_detect_speech(capture_thread, show_volume=True):
             # Check if we're above the threshold
             if current_db >= config.DB_THRESHOLD:
                 if not is_recording:
-                    log_message("\nSpeech detected, recording...")
+                    print("\nSpeech detected, recording...")
                     is_recording = True
                     capture_thread.set_recording_state(True)
                     
@@ -186,28 +181,18 @@ def process_audio_and_detect_speech(capture_thread, show_volume=True):
                     
                     silence_end_time = time.time()
                     silence_detection_time = (silence_end_time - silence_start_time) * 1000
-                    log_message(f"\nSilence detected, recording length: {recording_length_sec:.2f} seconds")
-                    log_message(f"1. Period after speech ended (silence detection): {silence_detection_time:.2f} ms")
+                    print(f"\nSilence detected, recording length: {recording_length_sec:.2f} seconds")
+                    print(f"1. Period after speech ended (silence detection): {silence_detection_time:.2f} ms")
                     
                     if recording_length_sec >= config.MIN_RECORDING_LENGTH_SEC:
                         # Save the recording with auto-generated filename
                         saved_path = audio.save_audio_to_file(recorded_audio)
-                        log_message(f"Saved recording to {saved_path}")
+                        print(f"Saved recording to {saved_path}")
                         
-                        # Send to server for transcription
-                        log_message("Transcribing...")
-                        normalize_start_time = time.time()
                         normalized_file = audio.normalize_audio(saved_path)
-                        normalize_end_time = time.time()
-                        normalize_duration = normalize_end_time - normalize_start_time
-                        log_message(f"2. Normalizing audio: {normalize_duration:.2f} seconds")
-                        
-                        transcribe_start_time = time.time()
+
+                        # Send to server for transcription                        
                         transcript = audio.send_to_whisper(saved_path)
-                        transcribe_end_time = time.time()
-                        transcribe_duration = transcribe_end_time - transcribe_start_time
-                        log_message(f"3. Transcribing audio: {transcribe_duration:.2f} seconds")
-                        log_message(f"\nTranscription: {transcript}")
                         
                         # Reset recording state
                         is_recording = False
@@ -216,7 +201,7 @@ def process_audio_and_detect_speech(capture_thread, show_volume=True):
                         # Return the transcript
                         return transcript
                     else:
-                        log_message("Recording too short, discarding")
+                        print("Recording too short, discarding")
                     
                     # Reset recording state
                     is_recording = False
@@ -240,7 +225,7 @@ def is_running_as_service():
 
 def signal_handler(sig, frame):
     """Handle signals like SIGTERM for graceful shutdown."""
-    log_message("\nReceived signal to terminate. Shutting down gracefully...")
+    print("\nReceived signal to terminate. Shutting down gracefully...")
     if 'capture_thread' in globals():
         globals()['capture_thread'].stop()
         globals()['capture_thread'].join(timeout=1.0)
@@ -255,15 +240,15 @@ def main():
     # Check if running as a service
     running_as_service = is_running_as_service()
     
-    log_message(f"Speech Detection and Transcription System")
+    print(f"Speech Detection and Transcription System")
     if running_as_service:
-        log_message("Running as a systemd service")
+        print("Running as a systemd service")
     else:
-        log_message("Running as a standalone application")
-    log_message(f"Speech threshold: {config.DB_THRESHOLD} dB, Silence threshold: {config.SILENCE_THRESHOLD_MS} ms")
-    log_message(f"Loaded {len(config.commands) if hasattr(config, 'commands') else 0} commands")
+        print("Running as a standalone application")
+    print(f"Speech threshold: {config.DB_THRESHOLD} dB, Silence threshold: {config.SILENCE_THRESHOLD_MS} ms")
+    print(f"Loaded {len(config.commands) if hasattr(config, 'commands') else 0} commands")
     if not running_as_service:
-        log_message("Press Ctrl+C to exit")
+        print("Press Ctrl+C to exit")
     
     # Create and start capture thread with ring buffer
     # Buffer 10 seconds of audio (adjust as needed)
@@ -271,56 +256,19 @@ def main():
     capture_thread = AudioCaptureThread(buffer_duration=10.0, chunk_duration=0.05)
     capture_thread.start()
     
-    log_message("Audio capture thread started with ring buffer")
+    print("Audio capture thread started with ring buffer")
     
     try:
         while True:
             transcript = process_audio_and_detect_speech(capture_thread, show_volume=not running_as_service)
-            if transcript:
-                # Process the command and get the result
-                # Temporarily set recording state to false during command processing
-                # This ensures the volume meter shows LISTENING instead of RECORDING
-                capture_thread.set_recording_state(False)
-                
-                # Check if the command starts with one of the AI assistant names
-                is_ai_command = False
-                for name in config.ai_assistant_names:
-                    if transcript.lower().startswith(name.lower()):
-                        is_ai_command = True
-                        break
-                
-                if is_ai_command:
-                    # Process as an AI command
-                    log_message("Processing as AI command...")
-                    api_start_time = time.time()
-                    success = ai.process_ai_command(transcript)
-                    api_end_time = time.time()
-                    api_duration = api_end_time - api_start_time
-                    log_message(f"4. API request to OpenAI and TTS: {api_duration:.2f} seconds")
-                else:
-                    # Process as a Home Assistant command
-                    api_start_time = time.time()
-                    success = homeassistant.process_command(transcript)
-                    api_end_time = time.time()
-                    api_duration = api_end_time - api_start_time
-                    log_message(f"4. API request to HomeAssistant: {api_duration:.2f} seconds")
-                
-                # Measure time for playing confirmation sound
-                if success:
-                    sound_start_time = time.time()
-                    audio.play_audio(config.CONFIRMATION_SOUND)
-                    sound_end_time = time.time()
-                    sound_duration = sound_end_time - sound_start_time
-                    log_message(f"5. Playing audio that job is finished: {sound_duration:.2f} seconds")
-                
-                # Give a small pause after command execution and sound playback
-                # This ensures we don't immediately start recording again
-                time.sleep(0.5)
-            
-            # Give a small pause between detection cycles
-            time.sleep(0.1)
+            if transcript:                
+                if homeassistant.process_command(transcript):
+                    audio.play_audio(config.HOMEASSISTANT_SOUND)
+                elif ai.is_ai_command(transcript):
+                    audio.play_audio(config.AI_SOUND)
+                    ai.process_ai_command(transcript)
     except KeyboardInterrupt:
-        log_message("\nExiting")
+        print("\nExiting")
         # Stop the capture thread
         capture_thread.stop()
         capture_thread.join(timeout=1.0)

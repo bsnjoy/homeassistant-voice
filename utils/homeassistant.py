@@ -3,6 +3,7 @@ import requests
 import config
 import os
 from utils import audio
+from utils.timing import time_execution
 
 def send_homeassistant_command(entity_id, service):
     """
@@ -40,6 +41,7 @@ def send_homeassistant_command(entity_id, service):
         print(f"Error sending command to Home Assistant: {e}")
         return False
 
+@time_execution(label="API request to HomeAssistant")
 def process_command(transcript):
     """
     Process the transcribed text to check if it matches action, device, and room aliases.

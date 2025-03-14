@@ -4,6 +4,22 @@ import config
 import openai
 from utils import tts
 from datetime import datetime
+from utils.timing import time_execution
+
+def is_ai_command(text):
+    """
+    Check if the text is a command meant for the AI assistant.
+    
+    Args:
+        text (str): The text to check
+        
+    Returns:
+        bool: True if the text is a command for the AI assistant, False otherwise
+    """
+    for name in config.ai_assistant_names:
+        if text.lower().startswith(name.lower()):
+            return True
+    return False
 
 def send_to_openai(text):
     """
@@ -33,6 +49,7 @@ def send_to_openai(text):
         print(f"Error sending request to OpenAI: {e}")
         return None
 
+@time_execution(label="API request to OpenAI and TTS")
 def process_ai_command(text):
     """
     Process a command meant for the AI assistant.
