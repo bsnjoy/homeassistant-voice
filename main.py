@@ -138,7 +138,6 @@ def process_audio_and_detect_speech(capture_thread, show_volume=True):
     is_recording = False
     silence_start_time = None
     speech_start_time = None
-    preroll_duration = config.PREROLL_DURATION_SEC
     
     # For display updates
     last_display_time = time.time()
@@ -163,7 +162,7 @@ def process_audio_and_detect_speech(capture_thread, show_volume=True):
                     capture_thread.set_recording_state(True)
                     
                     # Set speech start time with preroll
-                    speech_start_time = current_time - preroll_duration
+                    speech_start_time = current_time - config.PREROLL_DURATION_SEC
                 
                 # Reset silence timer
                 silence_start_time = None

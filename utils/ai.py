@@ -21,6 +21,7 @@ def is_ai_command(text):
             return True
     return False
 
+@time_execution(label="API request to OpenAI")
 def send_to_openai(text):
     """
     Send text to OpenAI GPT-4o to get a response.
@@ -49,7 +50,6 @@ def send_to_openai(text):
         print(f"Error sending request to OpenAI: {e}")
         return None
 
-@time_execution(label="API request to OpenAI and TTS")
 def process_ai_command(text):
     """
     Process a command meant for the AI assistant.

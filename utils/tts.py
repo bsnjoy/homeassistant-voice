@@ -3,7 +3,9 @@ import subprocess
 import json
 import config
 from utils.russian_number_converter import convert_numbers_to_russian_words
+from utils.timing import time_execution
 
+@time_execution(label="Playing and making request to TTS")
 def play_tts_response(text):
     """
     Convert text to speech using the TTS API and play it.
