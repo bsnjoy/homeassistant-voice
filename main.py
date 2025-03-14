@@ -193,6 +193,7 @@ def process_audio_and_detect_speech(capture_thread, show_volume=True):
 
                         # Send to server for transcription                        
                         transcript = audio.send_to_whisper(saved_path)
+                        print(f"Transcript: {transcript}")
                         
                         # Reset recording state
                         is_recording = False
