@@ -30,7 +30,9 @@ def send_homeassistant_command(entity_id, service):
     }
     
     try:
-        response = requests.post(url, headers=headers, json=data)
+        # rarely homeassistan succeds to send the command, but connectiong hangs
+        # to avoid user frustration, we terminate the connection after 5 seconds
+        response = requests.post(url, headers=headers, json=data, timeout=5)
         response.raise_for_status()
         print(f"Successfully sent command to Home Assistant: {service} {entity_id}")
         return True
