@@ -4,14 +4,14 @@
 # Whisper API configuration
 # All config options in def transcribe_file in
 # https://github.com/speaches-ai/speaches/blob/master/src/speaches/routers/stt.py
-Whisper = {
+whisper_config = {
     "model": "large-v3",
-    "response_format": "verbose_json",
+    "response_format": "text",
     "prompt": "",
     "language": "ru",
     "vad_filter": False,
 }
-server_url = "http://192.168.1.65:8000"
+whisper_url = "http://192.168.1.65:8000"
 
 # Home Assistant configuration
 homeassistant_url = "http://192.168.1.66:8123"

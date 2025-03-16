@@ -57,15 +57,14 @@ def send_to_whisper(audio_file):
     if not normalized_file.endswith("_normalized.wav"):
         normalized_file = normalize_audio(audio_file)
     
-    endpoint = f"{config.server_url}/v1/audio/transcriptions"
+    endpoint = f"{config.whisper_url}/v1/audio/transcriptions"
 
     files = {
         "file": open(normalized_file, "rb")
     }
 
-
     try:
-        response = requests.post(endpoint, files=files, data=config.Whisper)
+        response = requests.post(endpoint, files=files, data=config.whisper_config)
         response.raise_for_status()  # Raise an exception for HTTP errors
         return response.text
     except Exception as e:
