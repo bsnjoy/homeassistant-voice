@@ -262,8 +262,11 @@ def main():
         while True:
             transcript = process_audio_and_detect_speech(capture_thread, show_volume=not running_as_service)
             if transcript:                
-                if homeassistant.process_command(transcript):
+                success, entity_id, action = homeassistant.process_command(transcript)
+                if success:
                     audio.play_audio(config.HOMEASSISTANT_SOUND)
+                    # Call send_homeassistant_command with the returned values
+                    homeassistant.send_homeassistant_command(entity_id, action)
                 elif ai.is_ai_command(transcript):
                     audio.play_audio(config.AI_SOUND)
                     ai.process_ai_command(transcript)

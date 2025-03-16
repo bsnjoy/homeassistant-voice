@@ -5,13 +5,14 @@ import os
 from utils import audio
 from utils.timing import time_execution
 
+@time_execution(label="API request to HomeAssistant")
 def send_homeassistant_command(entity_id, service):
     """
     Send a command to Home Assistant to control an entity.
     
     Args:
         entity_id (str): The entity ID to control
-        action (str): The action to perform (turn_on, turn_off, etc.)
+        service (str): The service to call (turn_on, turn_off, etc.)
         
     Returns:
         bool: True if the command was successful, False otherwise
@@ -21,7 +22,7 @@ def send_homeassistant_command(entity_id, service):
         "Content-Type": "application/json",
     }
     
-    # Determine the service to call based on the action
+    # Extract domain from entity_id to construct the service URL
     domain = entity_id.split('.')[0]
     
     url = f"{config.homeassistant_url}/api/services/{domain}/{service}"
@@ -41,26 +42,29 @@ def send_homeassistant_command(entity_id, service):
         print(f"Error sending command to Home Assistant: {e}")
         return False
 
-@time_execution(label="API request to HomeAssistant")
+@time_execution(label="Check if it's HomeAssistant command")
 def process_command(transcript):
     """
     Process the transcribed text to check if it matches action, device, and room aliases.
-    If matches are found, execute the corresponding action on the device in the specified room.
+    If matches are found, identify the entity_id and action for the command.
     
     Args:
         transcript (str): The transcribed text to process
         
     Returns:
-        bool: True if a command was matched and executed, False otherwise
+        tuple: (success, entity_id, action)
+            - success (bool): True if a command was matched, False otherwise
+            - entity_id (str): The entity ID to control
+            - action (str): The action to perform
     """
     if not transcript:
-        return False
+        return False, None, None
     
     # Check if we have the necessary configuration
     required_attrs = ['action_aliases', 'device_aliases', 'room_entities', 'default_room']
     if not all(hasattr(config, attr) for attr in required_attrs):
         print("Missing required configuration attributes")
-        return False
+        return False, None, None
     
     # Convert transcript to lowercase for case-insensitive matching
     transcript = transcript.lower().strip()
@@ -75,7 +79,7 @@ def process_command(transcript):
     
     if not action:
         print("No action recognized in transcript")
-        return False
+        return False, None, None
     
     # Find device in transcript
     device = None
@@ -87,7 +91,7 @@ def process_command(transcript):
     
     if not device:
         print("No device recognized in transcript")
-        return False
+        return False, None, None
     
     # Find room in transcript (optional)
     room_specified = False
@@ -112,18 +116,17 @@ def process_command(transcript):
         
         if entity_id is None:
             print(f"No entity found for {device} in any room")
-            return False
+            return False, None, None
     else:
         # Get entity ID for the device in the specified room
         if room not in config.room_entities or device not in config.room_entities[room]:
             print(f"No entity found for {device} in {room}")
-            return False
+            return False, None, None
         
         entity_id = config.room_entities[room][device]
     
     print(f"Executing action: {action} on {entity_id} in {room}")
     
-    # Send the command to Home Assistant
-    success = send_homeassistant_command(entity_id, action)
-    
-    return success
+    # No longer sending the command here, as it will be sent from main.py
+    # Return the values for main.py to use
+    return True, entity_id, action
