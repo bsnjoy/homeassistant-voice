@@ -9,6 +9,7 @@ from threading import Thread, Event, Lock
 from collections import deque
 import config
 from utils import audio
+from utils import stt
 from utils import homeassistant
 from utils import ai
 
@@ -188,10 +189,10 @@ def process_audio_and_detect_speech(capture_thread, show_volume=True):
                         saved_path = audio.save_audio_to_file(recorded_audio)
                         print(f"Saved recording to {saved_path}")
                         
-                        normalized_file = audio.normalize_audio(saved_path)
+                        normalized_file = stt.normalize_audio(saved_path)
 
                         # Send to server for transcription                        
-                        transcript = audio.send_to_whisper(saved_path)
+                        transcript = stt.send_to_whisper(saved_path)
                         print(f"Transcript: {transcript}")
                         
                         # Reset recording state

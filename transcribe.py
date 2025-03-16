@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import os
-import audio_utils
+from utils import stt
 import config
 
 def main():
@@ -35,7 +35,7 @@ def main():
     
     # Send the file to Whisper for transcription
     print("Sending to Whisper API...")
-    transcript = audio_utils.send_to_whisper(audio_file)
+    transcript = stt.send_to_whisper(audio_file)
     
     # Display the result
     if transcript:
