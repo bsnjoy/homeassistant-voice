@@ -30,8 +30,8 @@ def main():
     
     print(f"Transcribing file: {audio_file}")
     print(f"Using Whisper API at: {config.server_url}")
-    print(f"Model: {config.model}")
-    print(f"Response format: {config.response_format}")
+    print(f"Model: {config.Whisper['model']}")
+    print(f"Response format: {config.Whisper['response_format']}")
     
     # Send the file to Whisper for transcription
     print("Sending to Whisper API...")

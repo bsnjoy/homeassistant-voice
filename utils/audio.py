@@ -189,16 +189,9 @@ def send_to_whisper(audio_file):
         "file": open(normalized_file, "rb")
     }
 
-    data = {
-        "model": config.model,
-        "response_format": config.response_format,
-        "prompt": config.prompt,
-        "language": config.language,
-        "vad_filter": True,
-    }
 
     try:
-        response = requests.post(endpoint, files=files, data=data)
+        response = requests.post(endpoint, files=files, data=config.Whisper)
         response.raise_for_status()  # Raise an exception for HTTP errors
         return response.text
     except Exception as e:
