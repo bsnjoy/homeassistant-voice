@@ -10,6 +10,7 @@ from collections import deque
 import config
 from utils import audio
 from utils import stt
+from utils import tts
 from utils import homeassistant
 from utils import ai
 
@@ -269,7 +270,15 @@ def main():
                     homeassistant.send_homeassistant_command(entity_id, action)
                 elif ai.is_ai_command(transcript):
                     audio.play_audio(config.AI_SOUND)
-                    ai.process_ai_command(transcript)
+                    response_text = ai.process_ai_command(transcript)
+                    if response_text:
+                        # Play the response using TTS and get the process handle
+                        process_handle = tts.play_tts_response(response_text)
+                        
+                        # We could do other things here while the audio is playing
+                        # For example, check if it's still playing or stop it if needed
+                        # is_playing = tts.is_playing(process_handle)
+                        # tts.stop_playing(process_handle)
     except KeyboardInterrupt:
         print("\nExiting")
         # Stop the capture thread

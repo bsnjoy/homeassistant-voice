@@ -58,7 +58,7 @@ def process_ai_command(text):
         text (str): The text to process
         
     Returns:
-        bool: True if successful, False otherwise
+        str: The AI response text if successful, None otherwise
     """
     # Remove the AI assistant name from the beginning of the text
     for name in config.ai_assistant_names:
@@ -71,9 +71,8 @@ def process_ai_command(text):
     response = send_to_openai(text)
     if not response:
         print("Failed to get response from OpenAI")
-        return False
+        return None
     
     print(f"OpenAI response: {response}")
-    # Play the response using TTS
-    success = tts.play_tts_response(response)
-    return success
+    # Return the response text
+    return response
