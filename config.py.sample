@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # Configuration file for speech detection and transcription system
 
-TRANSCRIPTION_API_URL = "http://192.168.1.65:8889/v1/transcription"
+TRANSCRIPTION_API_URL = "http://192.168.1.65:8889/transcribe"
 
 # Home Assistant configuration
 HOMEASSISTANT_URL = "http://192.168.1.66:8123"
