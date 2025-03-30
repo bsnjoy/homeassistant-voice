@@ -64,7 +64,7 @@ def transcribe(audio_file):
     try:
         response = requests.post(config.TRANSCRIPTION_API_URL, files=files)
         response.raise_for_status()  # Raise an exception for HTTP errors
-        return response.text
+        return response.json().get("text", None)  # Extract the transcription text from the response
     except Exception as e:
         print(f"Error: {e}")
         return None
