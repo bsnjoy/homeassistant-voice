@@ -1,21 +1,11 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # Configuration file for speech detection and transcription system
 
-# Whisper API configuration
-# All config options in def transcribe_file in
-# https://github.com/speaches-ai/speaches/blob/master/src/speaches/routers/stt.py
-whisper_config = {
-    "model": "large-v3",
-    "response_format": "text",
-    "prompt": "",
-    "language": "ru",
-    "vad_filter": False,
-}
-whisper_url = "http://192.168.1.65:8000"
+TRANSCRIPTION_API_URL = "http://192.168.1.65:8889/v1/transcription"
 
 # Home Assistant configuration
-homeassistant_url = "http://192.168.1.66:8123"
-homeassistant_token = "YOUR SAMPLE TOKEN"
+HOMEASSISTANT_URL = "http://192.168.1.66:8123"
+HOMEASSISTANT_TOKEN = "YOUR SAMPLE TOKEN"
 
 OPENAI_API_KEY = "YOUR SAMPLE KEY"
 

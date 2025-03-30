@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 import sys
 import time
 import os
@@ -190,10 +190,10 @@ def process_audio_and_detect_speech(capture_thread, show_volume=True):
                         saved_path = audio.save_audio_to_file(recorded_audio)
                         print(f"Saved recording to {saved_path}")
                         
-                        normalized_file = stt.normalize_audio(saved_path)
+                        # normalized_file = stt.normalize_audio(saved_path)
 
                         # Send to server for transcription                        
-                        transcript = stt.send_to_whisper(saved_path)
+                        transcript = stt.transcribe(saved_path)
                         print(f"Transcript: {transcript}")
                         
                         # Reset recording state
@@ -231,6 +231,10 @@ def signal_handler(sig, frame):
     if 'capture_thread' in globals():
         globals()['capture_thread'].stop()
         globals()['capture_thread'].join(timeout=1.0)
+    
+    # Stop the TTS player thread
+    tts.stop_tts_player_thread()
+    
     sys.exit(0)
 
 def main():
@@ -270,20 +274,19 @@ def main():
                     homeassistant.send_homeassistant_command(entity_id, action)
                 elif ai.is_ai_command(transcript):
                     audio.play_audio(config.AI_SOUND)
-                    response_text = ai.process_ai_command(transcript)
-                    if response_text:
-                        # Play the response using TTS and get the process handle
-                        process_handle = tts.play_tts_response(response_text)
-                        
-                        # We could do other things here while the audio is playing
-                        # For example, check if it's still playing or stop it if needed
-                        # is_playing = tts.is_playing(process_handle)
-                        # tts.stop_playing(process_handle)
+                    # The process_ai_command now handles streaming and TTS directly
+                    ai.process_ai_command(transcript)
+                    
+                    # No need to wait here as the TTS is handled by the background thread
     except KeyboardInterrupt:
         print("\nExiting")
         # Stop the capture thread
         capture_thread.stop()
         capture_thread.join(timeout=1.0)
+        
+        # Stop the TTS player thread
+        tts.stop_tts_player_thread()
+        
         sys.exit(0)
 
 if __name__ == "__main__":

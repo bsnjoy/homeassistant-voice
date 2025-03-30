@@ -40,7 +40,7 @@ def normalize_audio(input_file):
         return input_file  # Return original file if normalization fails
 
 @time_execution(label="Transcribing audio")
-def send_to_whisper(audio_file):
+def transcribe(audio_file):
     """
     Send an audio file to Whisper API for transcription.
     Normalizes the audio before sending for better transcription quality.
@@ -53,18 +53,16 @@ def send_to_whisper(audio_file):
     - None if an error occurred
     """
     # Note: Normalization is now handled in main.py for timing purposes
-    normalized_file = audio_file
-    if not normalized_file.endswith("_normalized.wav"):
-        normalized_file = normalize_audio(audio_file)
-    
-    endpoint = f"{config.whisper_url}/v1/audio/transcriptions"
-
+    # normalized_file = audio_file
+    # if not normalized_file.endswith("_normalized.wav"):
+    #     normalized_file = normalize_audio(audio_file)
+  
     files = {
-        "file": open(normalized_file, "rb")
+        "audio": open(audio_file, "rb")
     }
 
     try:
-        response = requests.post(endpoint, files=files, data=config.whisper_config)
+        response = requests.post(config.TRANSCRIPTION_API_URL, files=files)
         response.raise_for_status()  # Raise an exception for HTTP errors
         return response.text
     except Exception as e:

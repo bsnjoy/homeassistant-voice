@@ -18,14 +18,14 @@ def send_homeassistant_command(entity_id, service):
         bool: True if the command was successful, False otherwise
     """
     headers = {
-        "Authorization": f"Bearer {config.homeassistant_token}",
+        "Authorization": f"Bearer {config.HOMEASSISTANT_TOKEN}",
         "Content-Type": "application/json",
     }
     
     # Extract domain from entity_id to construct the service URL
     domain = entity_id.split('.')[0]
     
-    url = f"{config.homeassistant_url}/api/services/{domain}/{service}"
+    url = f"{config.HOMEASSISTANT_URL}/api/services/{domain}/{service}"
     
     data = {
         "entity_id": entity_id

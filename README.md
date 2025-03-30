@@ -70,8 +70,8 @@ server_url = "http://your-whisper-server:8000"
 
 ### Home Assistant Configuration
 ```python
-homeassistant_url = "http://your-homeassistant:8123"
-homeassistant_token = "YOUR_LONG_LIVED_ACCESS_TOKEN"
+HOMEASSISTANT_URL = "http://your-homeassistant:8123"
+HOMEASSISTANT_TOKEN = "YOUR_LONG_LIVED_ACCESS_TOKEN"
 ```
 
 ### Audio Configuration

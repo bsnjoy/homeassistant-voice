@@ -5,10 +5,91 @@ import config
 from utils.russian_number_converter import convert_numbers_to_russian_words
 from utils.timing import time_execution
 
+# Queue to store TTS segments for sequential playback
+import queue
+import threading
+import time
+
+# Create a queue for TTS segments
+tts_queue = queue.Queue()
+# Flag to indicate if the TTS player thread is running
+tts_player_running = False
+# Lock for thread safety
+tts_lock = threading.Lock()
+
+def start_tts_player_thread():
+    """
+    Start a thread to play TTS segments from the queue in order.
+    """
+    global tts_player_running
+    
+    with tts_lock:
+        if tts_player_running:
+            return
+        tts_player_running = True
+    
+    # Start the player thread
+    tts_thread = threading.Thread(target=tts_player_worker, daemon=True)
+    tts_thread.start()
+    print("TTS player thread started")
+
+def tts_player_worker():
+    """
+    Worker function for the TTS player thread.
+    Plays TTS segments from the queue in order.
+    """
+    global tts_player_running
+    
+    try:
+        while True:
+            # Get the next segment from the queue (blocks until an item is available)
+            segment = tts_queue.get()
+            
+            if segment is None:
+                # None is used as a signal to stop the thread
+                break
+            
+            # Play the segment
+            process_handle = _play_tts_segment(segment)
+            
+            # Wait for the segment to finish playing
+            if process_handle:
+                while is_playing(process_handle):
+                    time.sleep(0.1)
+            
+            # Mark the task as done
+            tts_queue.task_done()
+    except Exception as e:
+        print(f"Error in TTS player thread: {e}")
+    finally:
+        with tts_lock:
+            tts_player_running = False
+
 @time_execution(label="Starting TTS request")
 def play_tts_response(text):
     """
-    Convert text to speech using the TTS API and play it.
+    Convert text to speech using the TTS API and queue it for playback.
+    
+    Args:
+        text (str): The text to convert to speech
+        
+    Returns:
+        bool: True if the text was successfully queued, False otherwise
+    """
+    try:
+        # Make sure the player thread is running
+        start_tts_player_thread()
+        
+        # Add the text to the queue
+        tts_queue.put(text)
+        return True
+    except Exception as e:
+        print(f"Error queueing TTS response: {e}")
+        return False
+
+def _play_tts_segment(text):
+    """
+    Internal function to convert text to speech using the TTS API and play it.
     
     Args:
         text (str): The text to convert to speech
@@ -111,4 +192,29 @@ def stop_playing(process_handle):
         return True
     except Exception as e:
         print(f"Error stopping TTS playback: {e}")
+        return False
+
+def stop_tts_player_thread():
+    """
+    Stop the TTS player thread.
+    
+    Returns:
+        bool: True if successfully stopped, False otherwise
+    """
+    global tts_player_running
+    
+    try:
+        with tts_lock:
+            if not tts_player_running:
+                return True
+        
+        # Signal the thread to stop by adding None to the queue
+        tts_queue.put(None)
+        
+        # Wait for the queue to be processed
+        tts_queue.join()
+        
+        return True
+    except Exception as e:
+        print(f"Error stopping TTS player thread: {e}")
         return False
