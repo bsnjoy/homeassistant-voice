@@ -69,4 +69,4 @@ def transcribe(audio_file):
         print(f"Error: {e}")
         return None
     finally:
-        files["file"].close()  # Make sure to close the file
+        files["audio"].close()  # Make sure to close the file
