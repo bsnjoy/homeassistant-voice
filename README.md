@@ -51,7 +51,7 @@ A voice-controlled system for Home Assistant that listens for spoken commands, t
 
 5. Edit `config.py` to configure your:
    - Whisper API settings
-   - Home Assistant URL and access token
+   - Home Assistant URL and access token. Generate Long-lived access token in the bottom of http://homeassistant.local:8123/profile/security
    - Audio recording settings
    - Commands and device mappings
 

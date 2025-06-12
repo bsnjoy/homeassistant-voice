@@ -3,9 +3,10 @@
 
 TRANSCRIPTION_API_URL = "http://192.168.1.65:8889/transcribe"
 
-# Home Assistant configuration
+# Home Assistant configuration.
+# Generate Long-lived access token in the bottom of http://homeassistant.local:8123/profile/security
 HOMEASSISTANT_URL = "http://192.168.1.66:8123"
-HOMEASSISTANT_TOKEN = "YOUR SAMPLE TOKEN"
+HOMEASSISTANT_TOKEN = "YOUR LONG-LIVED ACCESS TOKEN"
 
 OPENAI_API_KEY = "YOUR SAMPLE KEY"
 
