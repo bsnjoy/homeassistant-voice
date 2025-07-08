@@ -2,6 +2,7 @@ import requests
 import config
 import io
 from utils.timing import time_execution
+import datetime
 
 @time_execution(label="Transcribing audio")
 def transcribe(audio_input):
@@ -20,8 +21,14 @@ def transcribe(audio_input):
             # File path - open and read the file
             files = {"audio": open(audio_input, "rb")}
         else:
-            # Raw audio data - create file-like object
-            files = {"audio": io.BytesIO(audio_input)}
+            # Generate filename using current timestamp
+            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            filename = f"world_audio_{timestamp}.wav"
+            # Raw audio data - provide filename and content type
+            files = {
+                "audio": (filename, io.BytesIO(audio_input), "audio/wav")
+            }
+            print(f"Transcribing raw audio data with virtual filename: {filename}")
 
         response = requests.post(config.TRANSCRIPTION_API_URL, files=files)
         response.raise_for_status()  # Raise an exception for HTTP errors
