@@ -3,6 +3,21 @@ import config
 import io
 from utils.timing import time_execution
 from datetime import datetime
+import wave
+
+def wrap_raw_pcm_as_wav(raw_audio, sample_rate=16000, num_channels=1, sample_width=2):
+    """
+    Wrap raw PCM data as a valid WAV file in memory.
+    """
+    buffer = io.BytesIO()
+    with wave.open(buffer, 'wb') as wf:
+        wf.setnchannels(num_channels)
+        wf.setsampwidth(sample_width)  # 2 bytes = 16-bit
+        wf.setframerate(sample_rate)
+        wf.writeframes(raw_audio)
+    buffer.seek(0)
+    return buffer
+
 
 @time_execution(label="Transcribing audio")
 def transcribe(audio_input):
@@ -21,12 +36,14 @@ def transcribe(audio_input):
             # File path - open and read the file
             files = {"audio": open(audio_input, "rb")}
         else:
+            # Create proper WAV file from raw PCM
+            wav_buffer = wrap_raw_pcm_as_wav(audio_input)
             # Generate filename using current timestamp
             timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
             filename = f"world_audio_{timestamp}.wav"
             # Raw audio data - provide filename and content type
             files = {
-                "audio": (filename, io.BytesIO(audio_input), "audio/wav")
+                "audio": (filename, wav_buffer, "audio/wav")
             }
             print(f"Transcribing raw audio data with virtual filename: {filename}")
 
