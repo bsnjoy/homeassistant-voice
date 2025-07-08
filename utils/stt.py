@@ -1,67 +1,28 @@
-import subprocess
-import json
 import requests
 import config
-import os
+import io
 from utils.timing import time_execution
 
-@time_execution(label="Normalizing audio")
-def normalize_audio(input_file):
-    """
-    Normalize audio using sox to improve transcription quality.
-    
-    Parameters:
-    - input_file (str): Path to the input audio file
-    
-    Returns:
-    - str: Path to the normalized audio file
-    """
-    # Create output filename by adding _normalized before the extension
-    base, ext = os.path.splitext(input_file)
-    output_file = f"{base}_normalized{ext}"
-    
-    # Create the sox command with the actual input and output files
-    normalize_cmd = config.AUDIO_NORMALIZE_CMD.copy()
-    for i, item in enumerate(normalize_cmd):
-        if item == "INPUT_FILE":
-            normalize_cmd[i] = input_file
-        elif item == "OUTPUT_FILE":
-            normalize_cmd[i] = output_file
-    
-    try:
-        # Execute the normalization command
-        subprocess.run(normalize_cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        return output_file
-    except subprocess.CalledProcessError as e:
-        print(f"Error normalizing audio: {e}")
-        return input_file  # Return original file if normalization fails
-    except Exception as e:
-        print(f"Unexpected error during audio normalization: {e}")
-        return input_file  # Return original file if normalization fails
-
 @time_execution(label="Transcribing audio")
-def transcribe(audio_file):
+def transcribe(audio_input):
     """
-    Send an audio file to Whisper API for transcription.
-    Normalizes the audio before sending for better transcription quality.
+    Send audio to Whisper API for transcription.
 
     Parameters:
-    - audio_file (str): Path to the audio file
+    - audio_input: Either a file path (str) or raw audio data (bytes)
 
     Returns:
     - The transcription result if successful
     - None if an error occurred
     """
-    # Note: Normalization is now handled in main.py for timing purposes
-    # normalized_file = audio_file
-    # if not normalized_file.endswith("_normalized.wav"):
-    #     normalized_file = normalize_audio(audio_file)
-  
-    files = {
-        "audio": open(audio_file, "rb")
-    }
-
     try:
+        if isinstance(audio_input, str):
+            # File path - open and read the file
+            files = {"audio": open(audio_input, "rb")}
+        else:
+            # Raw audio data - create file-like object
+            files = {"audio": io.BytesIO(audio_input)}
+
         response = requests.post(config.TRANSCRIPTION_API_URL, files=files)
         response.raise_for_status()  # Raise an exception for HTTP errors
         return response.json().get("text", None)  # Extract the transcription text from the response
@@ -69,4 +30,5 @@ def transcribe(audio_file):
         print(f"Error: {e}")
         return None
     finally:
-        files["audio"].close()  # Make sure to close the file
+        if isinstance(audio_input, str):
+            files["audio"].close()  # Make sure to close the file if it was opened

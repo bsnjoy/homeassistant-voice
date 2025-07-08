@@ -12,6 +12,7 @@ OPENAI_API_KEY = "YOUR SAMPLE KEY"
 
 # Audio recording configuration
 RECORDINGS_DIR = "recordings"
+SAVE_RECORDINGS_TO_DISK = False  # Set to True to save all recordings to disk
 DB_THRESHOLD = 50  # Default speech detection threshold in dB
 SILENCE_THRESHOLD_MS = 500  # Default silence duration threshold in ms
 MIN_RECORDING_LENGTH_SEC = 1.0  # Minimum recording length to process
@@ -30,9 +31,6 @@ AI_SOUND = "sounds/ai.wav"
 # To get the list of available devices, run:
 # arecord -L
 AUDIO_PLAY_CMD = ["aplay", "-D", "plughw:CARD=MS,DEV=0", "-r", "44100", "-c", "1", "-f", "S16_LE", "-t", "raw"]
-
-# Audio normalization command using sox
-AUDIO_NORMALIZE_CMD = ["sox", "INPUT_FILE", "-r", "16k", "OUTPUT_FILE", "norm", "-0.5", "compand", "0.3,1", "-90,-90,-70,-70,-60,-20,0,0", "-5", "0", "0.2"]
 
 # Audio format configuration
 SAMPLE_RATE = 16000

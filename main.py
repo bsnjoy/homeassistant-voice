@@ -186,14 +186,18 @@ def process_audio_and_detect_speech(capture_thread, show_volume=True):
                     print(f"1. Period after speech ended (silence detection): {silence_detection_time:.2f} ms")
                     
                     if recording_length_sec >= config.MIN_RECORDING_LENGTH_SEC:
-                        # Save the recording with auto-generated filename
-                        saved_path = audio.save_audio_to_file(recorded_audio)
-                        print(f"Saved recording to {saved_path}")
-                        
-                        # normalized_file = stt.normalize_audio(saved_path)
+                        # Check if we should save to disk or process from memory
+                        if config.SAVE_RECORDINGS_TO_DISK:
+                            # Save to disk then transcribe
+                            saved_path = audio.save_audio_to_file(recorded_audio)
+                            print(f"Saved recording to {saved_path}")
+                            # transcript = stt.transcribe(saved_path)
+                        else:
+                            # Transcribe directly from memory
+                            print("Processing recording from memory (not saved to disk)")
 
-                        # Send to server for transcription                        
-                        transcript = stt.transcribe(saved_path)
+                        transcript = stt.transcribe(recorded_audio)
+                        
                         print(f"Transcript: {transcript}")
                         
                         # Reset recording state
