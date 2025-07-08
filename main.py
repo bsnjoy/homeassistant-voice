@@ -191,12 +191,11 @@ def process_audio_and_detect_speech(capture_thread, show_volume=True):
                             # Save to disk then transcribe
                             saved_path = audio.save_audio_to_file(recorded_audio)
                             print(f"Saved recording to {saved_path}")
-                            # transcript = stt.transcribe(saved_path)
+                            transcript = stt.transcribe(saved_path)
                         else:
                             # Transcribe directly from memory
                             print("Processing recording from memory (not saved to disk)")
-
-                        transcript = stt.transcribe(recorded_audio)
+                            transcript = stt.transcribe(recorded_audio)
                         
                         print(f"Transcript: {transcript}")
                         
