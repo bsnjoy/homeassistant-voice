@@ -2,7 +2,7 @@ import requests
 import config
 import io
 from utils.timing import time_execution
-import datetime
+from datetime import datetime
 
 @time_execution(label="Transcribing audio")
 def transcribe(audio_input):
