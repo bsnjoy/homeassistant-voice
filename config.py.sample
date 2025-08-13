@@ -37,6 +37,9 @@ SAMPLE_RATE = 16000
 SAMPLE_WIDTH = 2  # 16-bit audio (S16_LE)
 CHANNELS = 1
 
+# TTS API configuration
+TTS_API_URL = "192.168.1.65:5000"
+
 # Audio recording command for PulseAudio
 # AUDIO_RECORD_CMD = ["parecord", "--property=media.role=phone", f"--rate={SAMPLE_RATE}", f"--channels={CHANNELS}", "--format=s16le", "--raw", "--latency-msec", "10"]
 # Audio recording command for ALSA (use this if PulseAudio is not available)

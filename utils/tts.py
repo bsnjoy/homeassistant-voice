@@ -100,21 +100,26 @@ def _play_tts_segment(text):
     try:
         optimized_text = convert_numbers_to_russian_words(text)
 
-        # Prepare the JSON data for the TTS API
-        json_data = json.dumps({"text": optimized_text, "format": "wav", "streaming": "True", "seed": 1})
+        # Prepare the JSON data for the new TTS API
+        json_data = json.dumps({"text": optimized_text})
         
-        # Construct the curl command
+        # Construct the curl command for the new API to output to stdout
         curl_cmd = [
             'curl',
             '-X', 'POST',
-            config.TTS_API_URL,
             '-H', 'Content-Type: application/json',
             '-d', json_data,
-            '--output', '-'
+            '--output', '-',  # Output to stdout
+            config.TTS_API_URL
         ]
         
         # Get the audio play command from config
-        audio_play_cmd = config.AUDIO_PLAY_CMD
+        audio_play_cmd = config.AUDIO_PLAY_CMD.copy()
+        
+        # For sox, we need to specify the input format as WAV when reading from stdin
+        if audio_play_cmd[0] == 'sox':
+            # Modify the command to read WAV from stdin
+            audio_play_cmd = ['sox', '-t', 'wav', '-', '-d']
         
         # Start the curl process
         curl_process = subprocess.Popen(
@@ -159,9 +164,11 @@ def is_playing(process_handle):
     curl_process = process_handle.get("curl_process")
     play_process = process_handle.get("play_process")
     
-    # Check if both processes are still running
+    # Check if either process is still running
     if curl_process and play_process:
         return curl_process.poll() is None or play_process.poll() is None
+    elif play_process:
+        return play_process.poll() is None
     
     return False
 
