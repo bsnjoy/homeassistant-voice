@@ -169,6 +169,25 @@ The program will start listening for voice commands. When it detects speech, it 
    sudo journalctl -u homeassistant-voice.service -b
    ```
 
+### add usb device monitoring
+disconnect and connect speaker and monitor dmesg for device id added.
+```
+dmesg
+```
+
+```
+cp report.sh.sample report.sh
+sudo cp 99-usb-jabra.rules /etc/udev/rules.d/
+```
+
+Edit
+vim /etc/udev/rules.d/99-usb-jabra.rules - to fix script with correct device id and copy to rules
+vim report.sh - put your telegram bot token and your id.
+```
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+```
+
 ### Testing Transcription
 
 You can test the transcription functionality separately:

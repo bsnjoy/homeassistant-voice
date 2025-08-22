@@ -1,0 +1,1 @@
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="0b0e", ATTR{idProduct}=="ae6b", RUN+="/bin/bash -c '/home/pi/homeassistant-voice/report.sh && /bin/sleep 5 && /bin/systemctl restart homeassistant-voice.service'"

@@ -5,3 +5,4 @@ venv/
 *.log
 __pycache__/
 config.py
+report.sh

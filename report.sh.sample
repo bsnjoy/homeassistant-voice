@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# Telegram bot configuration
+BOT_TOKEN=""  # Replace with your Telegram bot token
+CHAT_ID=""      # Replace with your Telegram chat ID
+
+# Message details
+TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
+MESSAGE="Jabra Speak2 40 MS re-added on wyoming-satellite-1 at $TIMESTAMP"
+
+# Send message via Telegram API
+curl -s -X POST "https://api.telegram.org/bot$BOT_TOKEN/sendMessage" \
+     -d chat_id="$CHAT_ID" \
+     -d text="$MESSAGE"
