@@ -114,7 +114,7 @@ def _play_tts_segment(text):
         ]
         
         # Get the audio play command from config
-        audio_play_cmd = config.AUDIO_PLAY_CMD.copy()
+        audio_play_cmd = config.VOICE_PLAY_CMD.copy()
         
         # For sox, we need to specify the input format as WAV when reading from stdin
         if audio_play_cmd[0] == 'sox':

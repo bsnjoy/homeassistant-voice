@@ -30,6 +30,9 @@ AI_SOUND = "sounds/ai.wav"
 # aplay -D plughw:CARD=MS,DEV=0 sounds/command_completed.wav
 # To get the list of available devices, run:
 # arecord -L
+# We use different commands because they can use different frequencies.
+# Piper TTS 22050 Hz, but audio files are usually 44.1 kHz
+VOICE_PLAY_CMD = ["aplay", "-D", "plughw:CARD=MS,DEV=0", "-r", "22050", "-c", "1", "-f", "S16_LE", "-t", "raw"]
 AUDIO_PLAY_CMD = ["aplay", "-D", "plughw:CARD=MS,DEV=0", "-r", "44100", "-c", "1", "-f", "S16_LE", "-t", "raw"]
 
 # Audio format configuration
