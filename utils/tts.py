@@ -110,6 +110,8 @@ def _play_tts_segment(text):
     """
     try:
         optimized_text = convert_numbers_to_russian_words(text)
+        # remove sybols: * , . from the text to avoid issues with the TTS API
+        optimized_text = optimized_text.replace('*', '').replace(',', '').replace('.', '')
 
         # Prepare the JSON data for the new TTS API
         json_data = json.dumps({"text": optimized_text})
