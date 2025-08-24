@@ -169,6 +169,37 @@ The program will start listening for voice commands. When it detects speech, it 
    sudo journalctl -u homeassistant-voice.service -b
    ```
 
+### Service Management and Graceful Shutdown
+
+The service supports graceful shutdown when stopped or restarted via systemctl:
+
+```bash
+# Stop the service
+sudo systemctl stop homeassistant-voice.service
+
+# Restart the service
+sudo systemctl restart homeassistant-voice.service
+```
+
+When the service receives a shutdown signal (SIGTERM):
+1. It stops accepting new voice commands
+2. Stops the audio capture thread cleanly
+3. Stops any currently playing TTS audio
+4. Clears any pending TTS queue items
+5. Exits gracefully with proper cleanup
+
+This ensures that:
+- No audio processes are left running
+- No partial recordings are processed
+- The service can be restarted cleanly without issues
+
+You can test the shutdown behavior using the included test script:
+```bash
+python tests/test_shutdown.py
+```
+
+This will verify that the service handles shutdown signals correctly.
+
 ### add usb device monitoring
 disconnect and connect speaker and monitor dmesg for device id added.
 ```
@@ -188,7 +219,24 @@ sudo udevadm control --reload-rules
 sudo udevadm trigger
 ```
 
-### Testing Transcription
+### Testing
+
+#### Running All Tests
+
+To run all tests in the tests directory:
+
+```bash
+python run_tests.py
+```
+
+#### Individual Test Scripts
+
+- **Test Shutdown Behavior**: `python tests/test_shutdown.py`
+- **Test TTS Functionality**: `python tests/test_tts.py`
+- **Test TTS Debug Mode**: `python tests/test_tts_debug.py`
+- **Test AI Integration**: Run via `python run_tests.py` (unit test)
+
+#### Testing Transcription
 
 You can test the transcription functionality separately:
 

@@ -16,6 +16,8 @@ tts_queue = queue.Queue()
 tts_player_running = False
 # Lock for thread safety
 tts_lock = threading.Lock()
+# Current playing process handle
+current_playing_process = None
 
 def start_tts_player_thread():
     """
@@ -38,7 +40,7 @@ def tts_player_worker():
     Worker function for the TTS player thread.
     Plays TTS segments from the queue in order.
     """
-    global tts_player_running
+    global tts_player_running, current_playing_process
     
     try:
         while True:
@@ -52,10 +54,18 @@ def tts_player_worker():
             # Play the segment
             process_handle = _play_tts_segment(segment)
             
+            # Store the current playing process
+            with tts_lock:
+                current_playing_process = process_handle
+            
             # Wait for the segment to finish playing
             if process_handle:
                 while is_playing(process_handle):
                     time.sleep(0.1)
+            
+            # Clear the current playing process
+            with tts_lock:
+                current_playing_process = None
             
             # Mark the task as done
             tts_queue.task_done()
@@ -64,6 +74,7 @@ def tts_player_worker():
     finally:
         with tts_lock:
             tts_player_running = False
+            current_playing_process = None
 
 @time_execution(label="Starting TTS request")
 def play_tts_response(text):
@@ -203,23 +214,36 @@ def stop_playing(process_handle):
 
 def stop_tts_player_thread():
     """
-    Stop the TTS player thread.
+    Stop the TTS player thread and clear any pending TTS segments.
     
     Returns:
         bool: True if successfully stopped, False otherwise
     """
-    global tts_player_running
+    global tts_player_running, current_playing_process
     
     try:
         with tts_lock:
             if not tts_player_running:
                 return True
+            
+            # Stop any currently playing audio
+            if current_playing_process:
+                stop_playing(current_playing_process)
+                current_playing_process = None
+        
+        # Clear the queue of any pending segments
+        while not tts_queue.empty():
+            try:
+                tts_queue.get_nowait()
+                tts_queue.task_done()
+            except queue.Empty:
+                break
         
         # Signal the thread to stop by adding None to the queue
         tts_queue.put(None)
         
-        # Wait for the queue to be processed
-        tts_queue.join()
+        # Give the thread a moment to exit gracefully
+        time.sleep(0.1)
         
         return True
     except Exception as e:

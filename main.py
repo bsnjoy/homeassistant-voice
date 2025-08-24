@@ -230,14 +230,24 @@ def is_running_as_service():
 
 def signal_handler(sig, frame):
     """Handle signals like SIGTERM for graceful shutdown."""
-    print("\nReceived signal to terminate. Shutting down gracefully...")
-    if 'capture_thread' in globals():
+    signal_name = signal.Signals(sig).name
+    print(f"\nReceived {signal_name} signal. Shutting down gracefully...")
+    
+    # Stop the capture thread if it exists
+    if 'capture_thread' in globals() and globals()['capture_thread'] is not None:
+        print("Stopping audio capture thread...")
         globals()['capture_thread'].stop()
-        globals()['capture_thread'].join(timeout=1.0)
+        globals()['capture_thread'].join(timeout=2.0)
+        if globals()['capture_thread'].is_alive():
+            print("Warning: Audio capture thread did not stop cleanly")
+        else:
+            print("Audio capture thread stopped successfully")
     
     # Stop the TTS player thread
+    print("Stopping TTS player thread...")
     tts.stop_tts_player_thread()
     
+    print("Shutdown complete")
     sys.exit(0)
 
 def main():
