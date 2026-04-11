@@ -9,7 +9,7 @@ playback (no aplay/TTS).
 - **Host:** `p3smart` (Debian 13, root user, `~/homeassistant-voice`)
 - **Audio sources (two cameras in the same room, processed in parallel):**
   - `192.168.1.205` — `rtsp://admin:love2918@192.168.1.205:554/Streaming/Channels/102`
-  - `192.168.1.208` — `rtsp://admin:love2918@192.168.1.208:554/Streaming/Channels/101`
+  - `192.168.1.208` — `rtsp://admin:love2918@192.168.1.208:554/Streaming/Channels/102`
 
   Each runs in its own `SpeechSource` thread with an independent ffmpeg
   process. Whichever mic captures a given utterance first wins; identical
@@ -98,7 +98,7 @@ def _ffmpeg_rtsp(url):
 
 AUDIO_RECORD_CMDS = {
     "cam205": _ffmpeg_rtsp("rtsp://admin:love2918@192.168.1.205:554/Streaming/Channels/102"),
-    "cam208": _ffmpeg_rtsp("rtsp://admin:love2918@192.168.1.208:554/Streaming/Channels/101"),
+    "cam208": _ffmpeg_rtsp("rtsp://admin:love2918@192.168.1.208:554/Streaming/Channels/102"),
 }
 DEDUPE_WINDOW_SEC = 2.0
 
