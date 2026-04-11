@@ -12,7 +12,7 @@ touching code.
 ## Deployments
 
 - **p3smart (RTSP from Hikvision camera, no local playback)** —
-  [`docs/p3smart-rtsp-deployment.md`](docs/p3smart-rtsp-deployment.md).
+  docs/p3smart-rtsp-deployment.md.
   Uses `ffmpeg` to pull the camera audio track as the mic, transcribes via
   the local `transcription-api.service`, toggles `switch.living_light` and
   the two garden relays.

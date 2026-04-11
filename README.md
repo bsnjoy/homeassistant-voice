@@ -296,9 +296,9 @@ The room is optional if the device is configured in `devices_without_room`.
 ## Deployments
 
 - **p3smart (RTSP from Hikvision camera, no local playback):**
-  [`docs/p3smart-rtsp-deployment.md`](docs/p3smart-rtsp-deployment.md)
+  docs/p3smart-rtsp-deployment.md
 
-Project overview and conventions for contributors: [`CLAUDE.md`](CLAUDE.md).
+Project overview and conventions for contributors: CLAUDE.md.
 
 ## License
 
