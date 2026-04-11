@@ -2,6 +2,7 @@
 import sys
 import time
 import os
+import datetime
 import subprocess
 import numpy as np
 import signal
@@ -20,6 +21,17 @@ sys.stdout.reconfigure(line_buffering=True)
 sys.stderr.reconfigure(line_buffering=True)
 
 DEDUPE_WINDOW_SEC = getattr(config, "DEDUPE_WINDOW_SEC", 2.0)
+TRANSCRIPTS_DIR = getattr(config, "TRANSCRIPTS_DIR", "transcripts")
+
+
+def append_transcript(source_name, ts, transcript):
+    """Append one transcript line to transcripts/<source_name>.log."""
+    os.makedirs(TRANSCRIPTS_DIR, exist_ok=True)
+    path = os.path.join(TRANSCRIPTS_DIR, f"{source_name}.log")
+    iso = datetime.datetime.fromtimestamp(ts).astimezone().isoformat(timespec="milliseconds")
+    text = (transcript or "").replace("\n", " ").replace("\r", " ").strip()
+    with open(path, "a", encoding="utf-8") as f:
+        f.write(f"{iso}\t{text}\n")
 
 
 class SpeechSource(Thread):
@@ -87,6 +99,7 @@ class SpeechSource(Thread):
                         if length_sec >= config.MIN_RECORDING_LENGTH_SEC:
                             transcript = stt.transcribe(bytes(recording))
                             print(f"[{self.source_name}] transcript: {transcript}")
+                            append_transcript(self.source_name, now, transcript)
                             if transcript:
                                 self.result_queue.put((self.source_name, now, transcript))
                         else:

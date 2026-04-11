@@ -151,9 +151,17 @@ ssh p3smart 'journalctl -u homeassistant-voice -f'
 # live transcripts only
 ssh p3smart 'journalctl -u homeassistant-voice -f -o cat' | grep --line-buffered Transcript
 
+# per-source transcript files (timestamp<TAB>text, one line per utterance)
+ssh p3smart 'tail -F ~/homeassistant-voice/transcripts/cam205.log ~/homeassistant-voice/transcripts/cam208.log'
+
 # restart
 ssh p3smart 'systemctl restart homeassistant-voice'
 ```
+
+Every finished utterance on every source is appended to
+`transcripts/<source_name>.log` (configurable via `TRANSCRIPTS_DIR`).
+Empty transcripts (silence/noise that the STT returned nothing for) are
+still logged so the timeline is complete. The directory is gitignored.
 
 If the camera stream picks up too much ambient noise and the log fills
 with empty `Transcript:` lines, raise `DB_THRESHOLD` in `config.py` and
