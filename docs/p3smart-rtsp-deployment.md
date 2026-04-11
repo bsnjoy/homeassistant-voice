@@ -7,10 +7,16 @@ playback (no aplay/TTS).
 ## Topology
 
 - **Host:** `p3smart` (Debian 13, root user, `~/homeassistant-voice`)
-- **Audio source:** Hikvision camera at `192.168.1.205`, RTSP sub-stream
-  `rtsp://admin:love2918@192.168.1.205:554/Streaming/Channels/102`
-  (audio track is 16 kHz mono AAC — matches `SAMPLE_RATE`, no resampling
-  needed on the detection side).
+- **Audio sources (two cameras in the same room, processed in parallel):**
+  - `192.168.1.205` — `rtsp://admin:love2918@192.168.1.205:554/Streaming/Channels/102`
+  - `192.168.1.208` — `rtsp://admin:love2918@192.168.1.208:554/Streaming/Channels/101`
+
+  Each runs in its own `SpeechSource` thread with an independent ffmpeg
+  process. Whichever mic captures a given utterance first wins; identical
+  commands seen within `DEDUPE_WINDOW_SEC` (default 2 s) from the second
+  mic are dropped by the main-loop dedupe.
+  Audio tracks are 16 kHz mono AAC — matches `SAMPLE_RATE`, no resampling
+  needed on the detection side.
 - **Transcription:** `transcription-api.service` on the same host at
   `http://127.0.0.1:8889/transcribe` (GigaAM, Russian).
 - **Home Assistant:** `http://192.168.1.66:8123`, controlled via long-lived
@@ -20,7 +26,9 @@ playback (no aplay/TTS).
 
 ## Audio pipeline
 
-Instead of `arecord`, `config.AUDIO_RECORD_CMD` launches ffmpeg:
+Instead of `arecord`, `config.AUDIO_RECORD_CMDS` launches one ffmpeg
+process per camera; each becomes a `SpeechSource` thread reading raw
+s16le from its ffmpeg's stdout:
 
 ```
 ffmpeg -loglevel quiet -rtsp_transport tcp \
@@ -28,8 +36,8 @@ ffmpeg -loglevel quiet -rtsp_transport tcp \
   -vn -acodec pcm_s16le -ar 16000 -ac 1 -f s16le -
 ```
 
-The existing `AudioCaptureThread` reads raw s16le from ffmpeg's stdout, so
-no code changes are needed — only config.
+No code changes are required to add more mics — only extra entries in
+`AUDIO_RECORD_CMDS`.
 
 ## Commands configured
 
@@ -80,12 +88,19 @@ AI_SOUND            = ""
 VOICE_PLAY_CMD      = ["true"]
 AUDIO_PLAY_CMD      = ["true"]
 
-AUDIO_RECORD_CMD = [
-    "ffmpeg", "-loglevel", "quiet", "-rtsp_transport", "tcp",
-    "-i", "rtsp://admin:love2918@192.168.1.205:554/Streaming/Channels/102",
-    "-vn", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1",
-    "-f", "s16le", "-",
-]
+def _ffmpeg_rtsp(url):
+    return [
+        "ffmpeg", "-loglevel", "quiet", "-rtsp_transport", "tcp",
+        "-i", url,
+        "-vn", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1",
+        "-f", "s16le", "-",
+    ]
+
+AUDIO_RECORD_CMDS = {
+    "cam205": _ffmpeg_rtsp("rtsp://admin:love2918@192.168.1.205:554/Streaming/Channels/102"),
+    "cam208": _ffmpeg_rtsp("rtsp://admin:love2918@192.168.1.208:554/Streaming/Channels/101"),
+}
+DEDUPE_WINDOW_SEC = 2.0
 
 default_room = "living_room"
 device_aliases = {"light": ["свет", "лампа", "light", "lamp"]}

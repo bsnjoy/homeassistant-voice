@@ -3,11 +3,19 @@
 Voice control for Home Assistant: capture audio → detect speech → transcribe
 (GigaAM/Whisper) → match action/device/room aliases → call HA REST API.
 
-Entry point: `main.py` (ring-buffer `AudioCaptureThread` in the same file).
-Audio capture is a subprocess launched from `config.AUDIO_RECORD_CMD` that
-writes raw s16le to stdout — swap that command to change the audio source
-(local `arecord`, `parecord`, or `ffmpeg` from an RTSP stream) without
-touching code.
+Entry point: `main.py`. Each audio input runs in its own `SpeechSource`
+thread that spawns a subprocess writing raw s16le to stdout, detects speech
+by dB threshold, transcribes the utterance, and pushes the result onto a
+shared queue. The main loop reads from the queue, matches commands via
+`utils.homeassistant.process_command`, and dedupes repeated commands (same
+entity + action) inside `DEDUPE_WINDOW_SEC` (default 2 s) so two mics in
+the same room don't trigger twice.
+
+Configure one or many sources via `config.AUDIO_RECORD_CMD` (single) or
+`config.AUDIO_RECORD_CMDS` (list of commands, or dict `{name: cmd}` for
+nicer log labels). Swap the command to change the audio source — local
+`arecord` / `parecord` or `ffmpeg` from an RTSP stream — without touching
+code.
 
 ## Deployments
 
