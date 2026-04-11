@@ -4,26 +4,27 @@ A voice-controlled system for Home Assistant that listens for spoken commands, t
 
 ## Features
 
-- **Continuous Audio Monitoring**: Listens for speech using your microphone
+- **Continuous Audio Monitoring**: Listens for speech using any process that writes raw s16le to stdout (local `arecord`/`parecord` or `ffmpeg` from an RTSP camera)
 - **Speech Detection**: Automatically detects when someone is speaking based on volume threshold
-- **Speech-to-Text**: Transcribes spoken commands using Whisper API
+- **Speech-to-Text**: Transcribes spoken commands via a pluggable HTTP API (GigaAM or Whisper)
 - **Command Processing**: Parses transcribed text to identify actions, devices, and rooms
-- **Home Assistant Integration**: Sends commands to Home Assistant via its REST API
-- **Audio Feedback**: Plays confirmation sounds when commands are successfully executed
+- **Home Assistant Integration**: Sends commands to Home Assistant via its REST API, with support for toggling multiple entities in a single call
+- **Audio Feedback**: Optional Piper TTS and confirmation sounds (can be disabled on hosts without speakers)
 - **Systemd Service**: Can be run as a background service on Linux systems
 
 ## Requirements
 
 - Python 3.6+
-- ALSA or PulseAudio for audio capture
-- Sox for audio normalization (optional but recommended)
-- Whisper API server (local or remote)
+- One of: ALSA/PulseAudio for a local mic, or `ffmpeg` for an RTSP camera audio track
+- A transcription HTTP endpoint (GigaAM or Whisper), local or remote
 - Home Assistant instance with API access
+- Optional: Piper TTS server for spoken responses
 
 ## Dependencies
 
 - numpy
 - requests
+- openai (only if the AI assistant wake-word branch is used)
 
 ## Installation
 
@@ -59,14 +60,29 @@ A voice-controlled system for Home Assistant that listens for spoken commands, t
 
 The `config.py` file contains all the configuration options:
 
-### Whisper API Configuration
+### Transcription API Configuration
 ```python
-model = "mobiuslabsgmbh/faster-whisper-large-v3-turbo"
-prompt = "включи выключи свет в офисе"
-language = "ru"
-response_format = "text"
-server_url = "http://your-whisper-server:8000"
+TRANSCRIPTION_API_URL = "http://your-transcription-server:8889/transcribe"
 ```
+The server is expected to accept a multipart `audio` file and return JSON
+`{"text": "..."}`. Any backend that speaks that contract works — see the
+`transcription_api` project (GigaAM) or a Whisper-compatible server.
+
+### Audio Source Configuration
+```python
+# Local ALSA mic:
+AUDIO_RECORD_CMD = ["arecord", "-D", "dsnoop:CARD=MS,DEV=0",
+                    "-r", "16000", "-c", "1", "-f", "S16_LE", "-t", "raw"]
+
+# Or a Hikvision RTSP camera audio track:
+AUDIO_RECORD_CMD = [
+    "ffmpeg", "-loglevel", "quiet", "-rtsp_transport", "tcp",
+    "-i", "rtsp://user:pass@camera.local:554/Streaming/Channels/102",
+    "-vn", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1",
+    "-f", "s16le", "-",
+]
+```
+Anything that writes raw `s16le` @ `SAMPLE_RATE` to stdout will work.
 
 ### Home Assistant Configuration
 ```python
@@ -108,18 +124,19 @@ room_aliases = {
 }
 ```
 
-Map devices to Home Assistant entity IDs:
+Map devices to Home Assistant entity IDs. A device may be mapped to a
+single entity ID or to a **list** of entity IDs that share a domain — a
+single voice command will then toggle all of them in one HA API call.
 
 ```python
-# Room to device mapping
 room_entities = {
     "office": {
         "ac": "climate.office_ac",
         "light": "light.office_main",
     },
-    "bedroom": {
-        "ac": "climate.bedroom_ac",
-        "light": "light.bedroom_main",
+    "garden": {
+        # Two-relay switch — one command hits both outputs
+        "light": ["switch.garden_switch", "switch.garden_switch_2"],
     },
 }
 ```
@@ -275,6 +292,13 @@ The room is optional if the device is configured in `devices_without_room`.
 - Verify that your Home Assistant URL and token are correct
 - Check that the entity IDs in your configuration match those in Home Assistant
 - Ensure that your Home Assistant instance is running and accessible
+
+## Deployments
+
+- **p3smart (RTSP from Hikvision camera, no local playback):**
+  [`docs/p3smart-rtsp-deployment.md`](docs/p3smart-rtsp-deployment.md)
+
+Project overview and conventions for contributors: [`CLAUDE.md`](CLAUDE.md).
 
 ## License
 
