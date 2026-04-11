@@ -22,13 +22,14 @@ def send_homeassistant_command(entity_id, service):
         "Content-Type": "application/json",
     }
     
-    # Extract domain from entity_id to construct the service URL
-    domain = entity_id.split('.')[0]
-    
+    # entity_id may be a single string or a list of IDs sharing a domain
+    first = entity_id[0] if isinstance(entity_id, (list, tuple)) else entity_id
+    domain = first.split('.')[0]
+
     url = f"{config.HOMEASSISTANT_URL}/api/services/{domain}/{service}"
-    
+
     data = {
-        "entity_id": entity_id
+        "entity_id": list(entity_id) if isinstance(entity_id, (list, tuple)) else entity_id
     }
     
     try:
