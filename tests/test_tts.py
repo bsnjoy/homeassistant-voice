@@ -6,21 +6,27 @@ import time
 # Add parent directory to path to import from utils
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from utils.tts import play_tts_response, is_playing, stop_playing
+from utils.tts import play_tts_response, stop_tts_player_thread, tts_queue, tts_lock, current_playing_process
 
 # Test the play_tts_response function with a sample text
 print("Starting TTS playback...")
-process_handle = play_tts_response("Это тестовое сообщение для проверки сохранения аудио файла.")
-print(f"Process handle: {process_handle}")
+success = play_tts_response("Это тестовое сообщение для проверки сохранения аудио файла.")
+print(f"TTS queued successfully: {success}")
 
-# Check if the audio is playing
-if process_handle:
-    print("Checking if audio is playing...")
+if success:
+    print("Checking TTS queue and playback status...")
     
-    # Wait for a moment and check if it's still playing
-    time.sleep(1)
-    playing = is_playing(process_handle)
-    print(f"Is audio still playing? {playing}")
+    # Give the player thread a moment to start processing
+    time.sleep(0.5)
+    
+    # Check if there's a current playing process
+    with tts_lock:
+        is_playing = current_playing_process is not None
+    print(f"Is audio currently playing? {is_playing}")
+    
+    # Check queue size
+    queue_size = tts_queue.qsize()
+    print(f"Items in TTS queue: {queue_size}")
     
     # Demonstrate how to do other work while audio is playing
     print("We can do other work while the audio is playing...")
@@ -31,20 +37,33 @@ if process_handle:
     time.sleep(wait_time)
     
     # Check again if it's still playing
-    playing = is_playing(process_handle)
-    print(f"Is audio still playing after {wait_time} seconds? {playing}")
+    with tts_lock:
+        is_playing = current_playing_process is not None
+    print(f"Is audio still playing after {wait_time} seconds? {is_playing}")
     
-    # Demonstrate how to stop the audio playback
-    if playing:
-        print("Stopping audio playback...")
-        stop_result = stop_playing(process_handle)
-        print(f"Stop result: {stop_result}")
-        
-        # Verify that it's stopped
-        time.sleep(0.5)
-        playing = is_playing(process_handle)
-        print(f"Is audio still playing after stopping? {playing}")
-    else:
-        print("Audio playback already completed naturally.")
+    # Add another TTS message to the queue to test sequential playback
+    print("\nAdding another TTS message to the queue...")
+    success2 = play_tts_response("Это второе сообщение для проверки последовательного воспроизведения.")
+    print(f"Second TTS queued successfully: {success2}")
+    
+    # Check queue size again
+    queue_size = tts_queue.qsize()
+    print(f"Items in TTS queue after adding second message: {queue_size}")
+    
+    # Wait a bit more
+    print(f"\nWaiting for both messages to complete...")
+    time.sleep(5)
+    
+    # Check final status
+    with tts_lock:
+        is_playing = current_playing_process is not None
+    queue_size = tts_queue.qsize()
+    print(f"Is audio still playing? {is_playing}")
+    print(f"Items remaining in TTS queue: {queue_size}")
+    
+    # Demonstrate how to stop the TTS player thread
+    print("\nStopping TTS player thread...")
+    stop_result = stop_tts_player_thread()
+    print(f"TTS player thread stopped successfully: {stop_result}")
 else:
-    print("Failed to start TTS playback.")
+    print("Failed to queue TTS playback.")
