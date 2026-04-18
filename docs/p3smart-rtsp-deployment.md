@@ -52,9 +52,10 @@ No code changes are required to add more mics — only extra entries in
 | --- | --- | --- |
 | `включи/выключи свет` (cam205/cam208) | `turn_on` / `turn_off` | `switch.living_light` (default room = `living_room`) |
 | `включи/выключи свет в саду` | `turn_on` / `turn_off` | `switch.garden_switch` **and** `switch.garden_switch_2` (single HA call with list payload) |
+| `включи/выключи свет` (cam201) | `turn_on` / `turn_off` | `switch.terrace_light_main` **and** `switch.terrace_strip_poolceiling_light_switch` |
 | `включи/выключи вентилятор` \| `пропеллер` (cam201) | `turn_on` / `turn_off` | `switch.terrace_fan_switch` **and** `switch.terrace_fan_switch_2` |
 
-The garden and terrace-fan cases rely on `send_homeassistant_command`
+The garden and terrace cases rely on `send_homeassistant_command`
 accepting a list of entity IDs that share a domain (commit `00b7998`).
 
 ## Install / update
@@ -125,7 +126,10 @@ room_aliases = {
 room_entities = {
     "living_room": {"light": "switch.living_light"},
     "garden":      {"light": ["switch.garden_switch", "switch.garden_switch_2"]},
-    "terrace":     {"fan":   ["switch.terrace_fan_switch", "switch.terrace_fan_switch_2"]},
+    "terrace":     {
+        "fan":   ["switch.terrace_fan_switch", "switch.terrace_fan_switch_2"],
+        "light": ["switch.terrace_light_main", "switch.terrace_strip_poolceiling_light_switch"],
+    },
 }
 ```
 
