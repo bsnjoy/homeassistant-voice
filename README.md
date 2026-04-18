@@ -261,6 +261,29 @@ You can test the transcription functionality separately:
 python transcribe.py recordings/your-recording.wav
 ```
 
+### Controlling an entity from the command line (`ha.py`)
+
+`ha.py` is a small helper that calls the Home Assistant REST API using
+the URL and token from `config.py`. Useful when you need to probe which
+relay is which (e.g. identifying the two outputs on a dual-relay switch
+like `terrace_strip_poolceiling_light`) or to script a quick toggle
+outside the voice pipeline.
+
+```
+# Toggle (no second argument)
+./ha.py switch.terrace_toilet_light
+
+# Explicit on / off (accepts on|1|true and off|0|false)
+./ha.py switch.terrace_fan_switch on
+./ha.py switch.terrace_fan_switch_2 off
+./ha.py light.office_main 1
+./ha.py climate.office_ac 0
+```
+
+The entity's domain (`switch`, `light`, `climate`, …) is inferred from
+the part before the dot, so any entity that supports
+`turn_on`/`turn_off`/`toggle` works.
+
 ## Voice Command Format
 
 The system recognizes commands in the format:
