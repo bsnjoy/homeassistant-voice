@@ -34,3 +34,9 @@ code.
 - `send_homeassistant_command(entity_id, service)` accepts either a string
   or a list of entity IDs sharing a domain; `config.room_entities` may map
   a device to a list when one logical command should hit several entities.
+- **Cross-room / "everywhere" commands are config, not code.** When you
+  need a phrase like `включи везде свет` to hit every room's light, add
+  a virtual room (e.g. `"everywhere"`) to `room_aliases` and `room_entities`
+  whose device entry is a flat list of every entity to trigger. The
+  existing room-match + list-entity fan-out handles the rest — do **not**
+  add special-case logic in `process_command`.

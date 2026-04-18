@@ -54,6 +54,7 @@ No code changes are required to add more mics — only extra entries in
 | `включи/выключи свет в саду` | `turn_on` / `turn_off` | `switch.garden_switch` **and** `switch.garden_switch_2` (single HA call with list payload) |
 | `включи/выключи свет` (cam201) | `turn_on` / `turn_off` | `switch.terrace_light_main` **and** `switch.terrace_strip_poolceiling_light_switch` |
 | `включи/выключи вентилятор` \| `пропеллер` (cam201) | `turn_on` / `turn_off` | `switch.terrace_fan_switch` **and** `switch.terrace_fan_switch_2` |
+| `включи/выключи везде свет` (any mic) | `turn_on` / `turn_off` | every `light` entity across rooms (via the `everywhere` virtual room) |
 
 The garden and terrace cases rely on `send_homeassistant_command`
 accepting a list of entity IDs that share a domain (commit `00b7998`).
@@ -122,6 +123,7 @@ room_aliases = {
     "living_room": ["living room", "гостиная", "гостиной"],
     "garden":      ["garden", "сад", "саду", "саде"],
     "terrace":     ["terrace", "терраса", "террасе", "террасу"],
+    "everywhere":  ["everywhere", "везде"],
 }
 room_entities = {
     "living_room": {"light": "switch.living_light"},
@@ -129,6 +131,14 @@ room_entities = {
     "terrace":     {
         "fan":   ["switch.terrace_fan_switch", "switch.terrace_fan_switch_2"],
         "light": ["switch.terrace_light_main", "switch.terrace_strip_poolceiling_light_switch"],
+    },
+    # Virtual room — keep in sync with the real rooms above
+    "everywhere":  {
+        "light": [
+            "switch.living_light",
+            "switch.garden_switch", "switch.garden_switch_2",
+            "switch.terrace_light_main", "switch.terrace_strip_poolceiling_light_switch",
+        ],
     },
 }
 ```

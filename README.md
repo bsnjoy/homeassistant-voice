@@ -141,6 +141,36 @@ room_entities = {
 }
 ```
 
+#### "Everywhere" / cross-room commands
+
+To make a phrase like `включи везде свет` (or `turn on the light
+everywhere`) trigger every room's light at once, add a **virtual room**
+to `room_aliases` and `room_entities` whose device entry is a flat list
+of every entity to hit. No code changes needed — the existing room
+matching plus list-entity fan-out already does it.
+
+```python
+room_aliases = {
+    "office":     ["office", "офис"],
+    "garden":     ["garden", "сад", "саду"],
+    "everywhere": ["everywhere", "везде"],
+}
+
+room_entities = {
+    "office":  {"light": "light.office_main"},
+    "garden":  {"light": ["switch.garden_switch", "switch.garden_switch_2"]},
+    "everywhere": {
+        "light": [
+            "light.office_main",
+            "switch.garden_switch", "switch.garden_switch_2",
+        ],
+    },
+}
+```
+
+Keep the `everywhere` lists in sync when adding entities to real rooms.
+All entities in one list must share a domain.
+
 ## Usage
 
 ### Running Manually
