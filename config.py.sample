@@ -78,6 +78,12 @@ room_aliases = {
 # Default room if not specified
 default_room = "office"
 
+# Per-source default room. When the utterance doesn't name a room, the mic's
+# location (keyed by its name in AUDIO_RECORD_CMDS) overrides default_room.
+# source_rooms = {
+#     "cam201": "terrace",
+# }
+
 # Devices that can be called without specifying a room
 # These devices will be searched across all rooms
 devices_without_room = ["ac"]

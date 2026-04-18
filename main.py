@@ -194,7 +194,7 @@ def main():
             except Empty:
                 continue
 
-            success, entity_id, action = homeassistant.process_command(transcript)
+            success, entity_id, action = homeassistant.process_command(transcript, source_name)
             if success:
                 key = (entity_key(entity_id), action)
                 now = time.time()

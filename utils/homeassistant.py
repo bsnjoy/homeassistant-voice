@@ -44,14 +44,17 @@ def send_homeassistant_command(entity_id, service):
         return False
 
 @time_execution(label="Check if it's HomeAssistant command")
-def process_command(transcript):
+def process_command(transcript, source_name=None):
     """
     Process the transcribed text to check if it matches action, device, and room aliases.
     If matches are found, identify the entity_id and action for the command.
-    
+
     Args:
         transcript (str): The transcribed text to process
-        
+        source_name (str, optional): Name of the audio source the transcript came
+            from. If `config.source_rooms` maps it to a room, that room is used
+            as the default when the utterance doesn't name a room.
+
     Returns:
         tuple: (success, entity_id, action)
             - success (bool): True if a command was matched, False otherwise
@@ -60,7 +63,7 @@ def process_command(transcript):
     """
     if not transcript:
         return False, None, None
-    
+
     # Check if we have the necessary configuration
     required_attrs = ['action_aliases', 'device_aliases', 'room_entities', 'default_room']
     if not all(hasattr(config, attr) for attr in required_attrs):
@@ -96,7 +99,8 @@ def process_command(transcript):
     
     # Find room in transcript (optional)
     room_specified = False
-    room = config.default_room
+    source_rooms = getattr(config, 'source_rooms', {})
+    room = source_rooms.get(source_name, config.default_room)
     for room_name, aliases in config.room_aliases.items():
         if any(alias in transcript for alias in aliases):
             room = room_name
