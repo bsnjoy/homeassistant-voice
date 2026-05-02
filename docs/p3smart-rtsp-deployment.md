@@ -190,6 +190,60 @@ internal supervisor inside `SpeechSource` that respawns ffmpeg on a stale
 RTSP stream, the service self-heals from router reboots / cable yanks
 without manual intervention.
 
+## Failure modes & recovery
+
+### The 2026-05-02 freeze
+
+Symptom: transcription silently stopped at 09:03 UTC and stayed dead for
+~4.5 h. The systemd unit was still `Active: running`, the python process
+and all three ffmpeg subprocesses were alive (uptime 10 days), but no new
+audio was being processed. Only `systemctl restart` brought it back.
+
+Root cause: a Mikrotik router reboot (~09:03) put the RTSP TCP sockets
+into a half-open state. ffmpeg's `read()` from those sockets had no I/O
+timeout and blocked indefinitely. The python parent's `read()` from
+ffmpeg's stdout in turn blocked indefinitely. All threads ended up
+parked in `futex_wait_queue` — alive but doing nothing. systemd had no
+way to know.
+
+### How recovery works now (commit `1d90174`)
+
+Three layers, cheapest first:
+
+1. **ffmpeg `-timeout 10000000`** (10 s socket I/O timeout) in
+   `_ffmpeg_rtsp` — ffmpeg exits on a half-open TCP socket instead of
+   blocking forever.
+2. **Internal supervisor in `SpeechSource`** — its `run()` loop respawns
+   the ffmpeg subprocess after a 2 s pause whenever it exits. A separate
+   `stale_source_watchdog` thread checks every 5 s that each source has
+   produced an audio chunk within `STALE_CHUNK_TIMEOUT_SEC` (30 s); if
+   not, it kills the subprocess so the supervisor respawns it. This
+   handles the case where ffmpeg itself wedges despite `-timeout` (e.g.
+   stuck inside libav decode). Recovery happens without restarting the
+   python process, so the dedupe state in the main loop is preserved.
+3. **systemd `Type=notify` + `WatchdogSec=60` + `Restart=always`** —
+   `main.py` sends `WATCHDOG=1` every 5 s. If the whole process wedges
+   (even the watchdog thread can't run), systemd kills and restarts it
+   within ~65 s. Last-resort safety net.
+
+End-to-end recovery from a router reboot or cable yank: ~12 s
+(10 s ffmpeg timeout + 2 s respawn delay), no human in the loop.
+
+### Verifying it's working
+
+```bash
+# systemd watchdog is active and being fed (WatchdogTimestamp updates)
+ssh p3smart 'systemctl show homeassistant-voice -p Type,WatchdogUSec,WatchdogTimestamp,NRestarts'
+
+# simulate a stuck source: kill one ffmpeg and confirm it respawns
+ssh p3smart 'pkill -KILL -f "ffmpeg.*192.168.1.205"'
+ssh p3smart 'journalctl -u homeassistant-voice -n 20 --no-pager' \
+  | grep -E 'restarting|starting audio source'
+```
+
+You should see `[cam205] subprocess exited, restarting in 2s` followed
+by `[cam205] starting audio source` and chunks resuming within seconds.
+
 ## Operations
 
 ```bash
