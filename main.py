@@ -3,6 +3,7 @@ import sys
 import time
 import os
 import datetime
+import socket
 import subprocess
 import numpy as np
 import signal
@@ -22,6 +23,28 @@ sys.stderr.reconfigure(line_buffering=True)
 
 DEDUPE_WINDOW_SEC = getattr(config, "DEDUPE_WINDOW_SEC", 2.0)
 TRANSCRIPTS_DIR = getattr(config, "TRANSCRIPTS_DIR", "transcripts")
+# If a source delivers no audio chunks for this long, kill its subprocess so
+# the supervisor can respawn it. Picked to be much larger than a normal read
+# interval (chunks arrive every ~50 ms) but short enough that a frozen RTSP
+# connection is recovered in well under a minute.
+STALE_CHUNK_TIMEOUT_SEC = getattr(config, "STALE_CHUNK_TIMEOUT_SEC", 30.0)
+SUBPROCESS_RESTART_DELAY_SEC = 2.0
+WATCHDOG_NOTIFY_INTERVAL_SEC = 5.0
+
+
+def sd_notify(message):
+    """Send a message to systemd via $NOTIFY_SOCKET. No-op if unset."""
+    addr = os.environ.get("NOTIFY_SOCKET")
+    if not addr:
+        return
+    if addr.startswith("@"):
+        addr = "\0" + addr[1:]
+    try:
+        with socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM) as sock:
+            sock.connect(addr)
+            sock.sendall(message.encode())
+    except Exception as e:
+        print(f"sd_notify failed: {e}")
 
 
 def append_transcript(source_name, ts, transcript):
@@ -53,8 +76,21 @@ class SpeechSource(Thread):
         self.preroll_maxlen = max(1, int(config.PREROLL_DURATION_SEC / chunk_duration))
         self.stop_event = Event()
         self.process = None
+        self.last_chunk_time = time.time()
 
     def run(self):
+        while not self.stop_event.is_set():
+            self._run_once()
+            if self.stop_event.is_set():
+                break
+            print(
+                f"[{self.source_name}] subprocess exited, restarting in "
+                f"{SUBPROCESS_RESTART_DELAY_SEC:.0f}s"
+            )
+            self.stop_event.wait(SUBPROCESS_RESTART_DELAY_SEC)
+            self.last_chunk_time = time.time()
+
+    def _run_once(self):
         print(f"[{self.source_name}] starting audio source")
         try:
             self.process = subprocess.Popen(
@@ -75,10 +111,11 @@ class SpeechSource(Thread):
                 if not chunk:
                     print(f"[{self.source_name}] audio stream ended")
                     break
+                self.last_chunk_time = time.time()
 
                 samples = np.frombuffer(chunk, dtype=np.int16)
                 db = audio.db_from_rms(audio.rms_from_samples(samples))
-                now = time.time()
+                now = self.last_chunk_time
 
                 if db >= config.DB_THRESHOLD:
                     if not is_recording:
@@ -112,19 +149,34 @@ class SpeechSource(Thread):
         except Exception as e:
             print(f"[{self.source_name}] error: {e}")
         finally:
-            if self.process:
-                try:
-                    self.process.terminate()
-                except Exception:
-                    pass
+            self._kill_process()
+
+    def _kill_process(self):
+        if not self.process:
+            return
+        try:
+            self.process.terminate()
+            try:
+                self.process.wait(timeout=2.0)
+            except subprocess.TimeoutExpired:
+                self.process.kill()
+        except Exception:
+            pass
+        self.process = None
+
+    def kill_subprocess(self):
+        """Kill the running subprocess; the run() loop will respawn it."""
+        proc = self.process
+        if not proc:
+            return
+        try:
+            proc.kill()
+        except Exception:
+            pass
 
     def stop(self):
         self.stop_event.set()
-        if self.process:
-            try:
-                self.process.terminate()
-            except Exception:
-                pass
+        self._kill_process()
 
 
 def get_audio_sources():
@@ -167,6 +219,36 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 
+def stale_source_watchdog(srcs, stop_event):
+    """Kill any source whose ffmpeg has stopped delivering chunks.
+
+    The SpeechSource.run() loop respawns the subprocess after a kill, so this
+    is what gets us out of the half-open-TCP wedge that follows a router
+    reboot or upstream cable yank.
+    """
+    while not stop_event.wait(5.0):
+        now = time.time()
+        for s in srcs:
+            stale = now - s.last_chunk_time
+            if stale > STALE_CHUNK_TIMEOUT_SEC:
+                print(
+                    f"[{s.source_name}] no chunks for {stale:.0f}s "
+                    f"(>{STALE_CHUNK_TIMEOUT_SEC:.0f}s) — killing subprocess"
+                )
+                s.kill_subprocess()
+                s.last_chunk_time = now  # don't kill again before respawn settles
+
+
+def systemd_watchdog_pinger(stop_event):
+    """Periodic WATCHDOG=1 to systemd. Independent of source health on
+    purpose — per-source recovery is handled internally; this is the safety
+    net for the whole process being wedged."""
+    if not os.environ.get("NOTIFY_SOCKET"):
+        return
+    while not stop_event.wait(WATCHDOG_NOTIFY_INTERVAL_SEC):
+        sd_notify("WATCHDOG=1")
+
+
 def main():
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
@@ -183,6 +265,13 @@ def main():
         src.start()
         sources.append(src)
     print(f"Started {len(sources)} audio source(s): {', '.join(s.source_name for s in sources)}")
+
+    watchdog_stop = Event()
+    Thread(target=stale_source_watchdog, args=(sources, watchdog_stop),
+           daemon=True, name="StaleSourceWatchdog").start()
+    Thread(target=systemd_watchdog_pinger, args=(watchdog_stop,),
+           daemon=True, name="SystemdWatchdog").start()
+    sd_notify("READY=1")
 
     # (entity_key, action) -> timestamp of last successful execution
     last_executed = {}

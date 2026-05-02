@@ -100,8 +100,13 @@ VOICE_PLAY_CMD      = ["true"]
 AUDIO_PLAY_CMD      = ["true"]
 
 def _ffmpeg_rtsp(url):
+    # -timeout 10000000 (10 s socket I/O timeout) makes ffmpeg exit on a
+    # half-open TCP socket — e.g. after a router reboot or cable yank — so
+    # the SpeechSource supervisor in main.py can respawn it. Without this
+    # ffmpeg would block on read() forever and freeze the whole pipeline.
     return [
         "ffmpeg", "-loglevel", "quiet", "-rtsp_transport", "tcp",
+        "-timeout", "10000000",
         "-i", url,
         "-vn", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1",
         "-f", "s16le", "-",
@@ -159,12 +164,14 @@ Wants=network-online.target
 Requires=transcription-api.service
 
 [Service]
-Type=simple
+Type=notify
+NotifyAccess=main
 User=root
 WorkingDirectory=/root/homeassistant-voice
 ExecStart=/usr/bin/python3 /root/homeassistant-voice/main.py
-Restart=on-failure
+Restart=always
 RestartSec=5
+WatchdogSec=60
 StandardOutput=journal
 StandardError=journal
 
@@ -174,6 +181,14 @@ WantedBy=multi-user.target
 
 `Requires=transcription-api.service` ties the voice service to the local
 GigaAM server — if that is down, this one will not start.
+
+`Type=notify` + `WatchdogSec=60` is the outer safety net: `main.py` pings
+`WATCHDOG=1` every 5 s, so if the whole process wedges (ignoring the
+internal stale-source watchdog) systemd kills + restarts it. `Restart=always`
+covers the case where the process exits for any reason — combined with the
+internal supervisor inside `SpeechSource` that respawns ffmpeg on a stale
+RTSP stream, the service self-heals from router reboots / cable yanks
+without manual intervention.
 
 ## Operations
 
