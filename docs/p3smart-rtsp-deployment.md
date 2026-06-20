@@ -60,7 +60,7 @@ No code changes are required to add more mics — only extra entries in
 | `включи/выключи свет в саду` | `turn_on` / `turn_off` | `switch.garden_switch` **and** `switch.garden_switch_2` (single HA call with list payload) |
 | `включи/выключи свет` (cam201) | `turn_on` / `turn_off` | `switch.terrace_light_main` **and** `switch.terrace_strip_poolceiling_light_switch` |
 | `включи/выключи вентилятор` \| `пропеллер` (cam201) | `turn_on` / `turn_off` | `switch.terrace_fan_switch` **and** `switch.terrace_fan_switch_2` |
-| `включи/выключи свет бассейн` \| `басик` (any mic) | `turn_on` / `turn_off` | `switch.pool_light` **and** `switch.terrace_strip_poolceiling_light_switch_2` (pool has no dedicated mic — always spoken with the room name; relay 2 of the terrace strip device is the pool ceiling) |
+| `включи/выключи свет бассейн` \| `басик` (any mic) | `turn_on` / `turn_off` | `switch.pool_light` **and** `switch.terrace_strip_poolceiling_light_switch_2`. **`turn_off` additionally hits `switch.pool_jacuzzi`** — switching the pool light off also kills the jacuzzi; switching it on does not (action-specific mapping, see config). Pool has no dedicated mic, so always spoken with the room name; relay 2 of the terrace strip device is the pool ceiling. |
 | `включи/выключи джакузи` (any mic) | `turn_on` / `turn_off` | `switch.pool_jacuzzi` (jacuzzi jets; globally-unique device in `devices_without_room`, so no room word needed even though the terrace mic defaults to `terrace`) |
 | `включи/выключи пузырьки` \| `пузыри` (any mic) | `turn_on` / `turn_off` | `switch.pool_bubbles` (jacuzzi air bubbles; also in `devices_without_room`. The `bubbles` alias is ordered **before** `jacuzzi` in `device_aliases` so `пузырьки в джакузи` resolves to bubbles, not the jets) |
 | `включи/выключи везде свет` (any mic) | `turn_on` / `turn_off` | every `light` entity across rooms (via the `everywhere` virtual room) |
@@ -155,7 +155,13 @@ room_entities = {
         "light": ["switch.terrace_light_main", "switch.terrace_strip_poolceiling_light_switch"],
     },
     "pool":        {
-        "light":   ["switch.pool_light", "switch.terrace_strip_poolceiling_light_switch_2"],
+        # Action-specific: turning the pool light OFF also kills the jacuzzi;
+        # turning it ON does not. An entity mapping may be a str, a list, or a
+        # {action: entity(s)} dict — process_command resolves the dict by action.
+        "light":   {
+            "turn_on":  ["switch.pool_light", "switch.terrace_strip_poolceiling_light_switch_2"],
+            "turn_off": ["switch.pool_light", "switch.terrace_strip_poolceiling_light_switch_2", "switch.pool_jacuzzi"],
+        },
         "jacuzzi": "switch.pool_jacuzzi",
         "bubbles": "switch.pool_bubbles",
     },

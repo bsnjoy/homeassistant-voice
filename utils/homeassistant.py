@@ -129,7 +129,20 @@ def process_command(transcript, source_name=None):
             return False, None, None
         
         entity_id = config.room_entities[room][device]
-    
+
+    # An entity mapping may be action-specific: a dict of {action: entity(s)}
+    # lets one action target a different set than another — e.g. turning the
+    # pool light *off* also kills the jacuzzi, while turning it *on* does not.
+    # A "default" key covers any action not listed explicitly.
+    if isinstance(entity_id, dict):
+        if action in entity_id:
+            entity_id = entity_id[action]
+        elif 'default' in entity_id:
+            entity_id = entity_id['default']
+        else:
+            print(f"No entities mapped for action '{action}' on {device} in {room}")
+            return False, None, None
+
     print(f"Executing action: {action} on {entity_id} in {room}")
     
     # No longer sending the command here, as it will be sent from main.py

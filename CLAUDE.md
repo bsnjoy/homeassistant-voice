@@ -34,6 +34,12 @@ code.
 - `send_homeassistant_command(entity_id, service)` accepts either a string
   or a list of entity IDs sharing a domain; `config.room_entities` may map
   a device to a list when one logical command should hit several entities.
+- A `room_entities[room][device]` value may also be a `{action: entity(s)}`
+  dict when one action should target a different set than another (e.g. the
+  pool `light` whose `turn_off` also kills the jacuzzi while `turn_on`
+  doesn't). `process_command` resolves the dict by the spoken action, falling
+  back to a `"default"` key if present. Prefer this over special-casing in
+  `process_command`.
 - **Cross-room / "everywhere" commands are config, not code.** When you
   need a phrase like `включи везде свет` to hit every room's light, add
   a virtual room (e.g. `"everywhere"`) to `room_aliases` and `room_entities`
