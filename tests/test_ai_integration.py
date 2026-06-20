@@ -2,13 +2,24 @@
 import unittest
 import sys
 import os
-import config
 
 # Add the parent directory to the path so we can import the modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from utils.ai import send_to_openai
+# Live integration test: needs a deployment config.py and the OpenAI client,
+# and makes a real API call. Skip cleanly (instead of erroring at import) when
+# those are unavailable, e.g. on a dev box or CI without config.py.
+try:
+    import config  # noqa: F401
+    from utils.ai import send_to_openai
+    _DEPS_OK = True
+    _SKIP_REASON = ""
+except Exception as _exc:
+    _DEPS_OK = False
+    _SKIP_REASON = f"AI integration deps unavailable: {_exc}"
 
+
+@unittest.skipUnless(_DEPS_OK, _SKIP_REASON)
 class TestAIIntegration(unittest.TestCase):
     """Integration test for the AI module that makes an actual API call."""
 

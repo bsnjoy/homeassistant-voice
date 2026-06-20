@@ -8,8 +8,18 @@ import time
 # Add parent directory to path to import from utils and config
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import config
-from utils.tts import play_tts_response, stop_tts_player_thread
+# Manual TTS integration script: needs a deployment config.py, the TTS server
+# and audio output. Guard the imports so unittest discovery can import this
+# module without erroring; the body only runs when executed directly.
+try:
+    import config
+    from utils.tts import play_tts_response, stop_tts_player_thread
+    _DEPS_OK = True
+    _DEPS_ERROR = None
+except Exception as _exc:
+    _DEPS_OK = False
+    _DEPS_ERROR = _exc
+
 
 def test_tts_with_debug():
     print("Testing TTS with debug mode...")
@@ -60,4 +70,7 @@ def test_tts_with_debug():
         print("\nNo WAV files found in temp directory (all cleaned up)")
 
 if __name__ == "__main__":
+    if not _DEPS_OK:
+        print(f"SKIP: TTS dependencies unavailable ({_DEPS_ERROR})")
+        sys.exit(0)
     test_tts_with_debug()
