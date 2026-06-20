@@ -63,6 +63,7 @@ No code changes are required to add more mics — only extra entries in
 | `включи/выключи свет бассейн` \| `басик` (any mic) | `turn_on` / `turn_off` | `switch.pool_light` **and** `switch.terrace_strip_poolceiling_light_switch_2`. **`turn_off` additionally hits `switch.pool_jacuzzi` and `switch.pool_bubbles`** — switching the pool light off also kills the jacuzzi and its bubbles; switching it on does not (action-specific mapping, see config). Pool has no dedicated mic, so always spoken with the room name; relay 2 of the terrace strip device is the pool ceiling. |
 | `включи/выключи джакузи` (any mic) | `turn_on` / `turn_off` | `switch.pool_jacuzzi` (jacuzzi jets; globally-unique device in `devices_without_room`, so no room word needed even though the terrace mic defaults to `terrace`) |
 | `включи/выключи пузырьки` \| `пузыри` (any mic) | `turn_on` / `turn_off` | `switch.pool_bubbles` (jacuzzi air bubbles; also in `devices_without_room`. The `bubbles` alias is ordered **before** `jacuzzi` in `device_aliases` so `пузырьки в джакузи` resolves to bubbles, not the jets) |
+| `включи/выключи бассейн` \| `басик` (any mic) | `turn_on` / `turn_off` | Bare room word, **no `свет`** — behaves exactly like `свет бассейн`: on → the two pool lights; off → lights **+ `switch.pool_jacuzzi` + `switch.pool_bubbles`**. Implemented as a `pool` pseudo-device (aliases = the pool room words) kept **last** in `device_aliases` so any real device word (`свет`/`джакузи`/`пузырьки`) still wins — only an utterance with the pool word and no device word falls through to it. |
 | `включи/выключи везде свет` (any mic) | `turn_on` / `turn_off` | every `light` entity across rooms (via the `everywhere` virtual room) |
 
 The garden and terrace cases rely on `send_homeassistant_command`
@@ -139,6 +140,10 @@ device_aliases = {
     # so "пузырьки в джакузи" resolves to bubbles, not the jacuzzi jets.
     "bubbles": ["пузырьки", "пузыри", "bubbles"],
     "jacuzzi": ["джакузи", "jacuzzi"],
+    # Bare pool word, no device ("выключи бассейн") — MUST stay LAST so a real
+    # device word (свет/джакузи/пузырьки) always wins; only a bare pool word
+    # falls through to the whole-pool bundle.
+    "pool":    ["бассейн", "басик", "pool"],
 }
 room_aliases = {
     "living_room": ["living room", "гостиная", "гостиной"],
@@ -146,6 +151,13 @@ room_aliases = {
     "terrace":     ["terrace", "терраса", "террасе", "террасу"],
     "pool":        ["pool", "бассейн", "бассейне", "басик"],
     "everywhere":  ["everywhere", "везде"],
+}
+# Pool light / whole-pool bundle, shared by the "light" device and the
+# bare-room "pool" device. ON lights the pool; OFF also kills jacuzzi + bubbles.
+_pool_bundle = {
+    "turn_on":  ["switch.pool_light", "switch.terrace_strip_poolceiling_light_switch_2"],
+    "turn_off": ["switch.pool_light", "switch.terrace_strip_poolceiling_light_switch_2",
+                 "switch.pool_jacuzzi", "switch.pool_bubbles"],
 }
 room_entities = {
     "living_room": {"light": "switch.living_light"},
@@ -155,13 +167,12 @@ room_entities = {
         "light": ["switch.terrace_light_main", "switch.terrace_strip_poolceiling_light_switch"],
     },
     "pool":        {
-        # Action-specific: turning the pool light OFF also kills the jacuzzi and
-        # its bubbles; turning it ON does not. An entity mapping may be a str, a
-        # list, or a {action: entity(s)} dict — process_command resolves by action.
-        "light":   {
-            "turn_on":  ["switch.pool_light", "switch.terrace_strip_poolceiling_light_switch_2"],
-            "turn_off": ["switch.pool_light", "switch.terrace_strip_poolceiling_light_switch_2", "switch.pool_jacuzzi", "switch.pool_bubbles"],
-        },
+        # Action-specific (resolved by process_command): an entity mapping may
+        # be a str, a list, or a {action: entity(s)} dict. ON lights the pool;
+        # OFF also kills the jacuzzi and its bubbles.
+        "light":   _pool_bundle,
+        # Bare room word ("выключи бассейн"/"басик", no device) == "свет бассейн".
+        "pool":    _pool_bundle,
         "jacuzzi": "switch.pool_jacuzzi",
         "bubbles": "switch.pool_bubbles",
     },
