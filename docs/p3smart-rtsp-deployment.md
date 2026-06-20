@@ -26,8 +26,14 @@ playback (no aplay/TTS).
   needed on the detection side.
 - **Transcription:** `transcription-api.service` on the same host at
   `http://127.0.0.1:8889/transcribe` (GigaAM, Russian).
-- **Home Assistant:** `http://192.168.1.66:8123`, controlled via long-lived
-  access token stored in `config.py`.
+- **Home Assistant:** `http://192.168.1.66:8123` — a **HAOS VM on the
+  `p3host` machine** (host/VM details live in the separate `homeassistant`
+  repo). Controlled via a dedicated `voice` long-lived access token stored
+  in `config.py` (`HOMEASSISTANT_TOKEN`), kept distinct from the
+  `claude-console` token. The token is backed up in the `homeassistant`
+  repo at `docs/credentials/p3h1.md`; if it is ever revoked, regenerate it
+  in HA → Profile → Security and update both `config.py` (then
+  `systemctl restart homeassistant-voice`) and that backup.
 - **Playback:** none. p3smart has no speakers, `HOMEASSISTANT_SOUND` /
   `AI_SOUND` are empty strings so `audio.play_audio` is a no-op.
 
