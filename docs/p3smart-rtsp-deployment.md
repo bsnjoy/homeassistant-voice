@@ -61,6 +61,8 @@ No code changes are required to add more mics — only extra entries in
 | `включи/выключи свет` (cam201) | `turn_on` / `turn_off` | `switch.terrace_light_main` **and** `switch.terrace_strip_poolceiling_light_switch` |
 | `включи/выключи вентилятор` \| `пропеллер` (cam201) | `turn_on` / `turn_off` | `switch.terrace_fan_switch` **and** `switch.terrace_fan_switch_2` |
 | `включи/выключи свет бассейн` \| `басик` (any mic) | `turn_on` / `turn_off` | `switch.pool_light` **and** `switch.terrace_strip_poolceiling_light_switch_2` (pool has no dedicated mic — always spoken with the room name; relay 2 of the terrace strip device is the pool ceiling) |
+| `включи/выключи джакузи` (any mic) | `turn_on` / `turn_off` | `switch.pool_jacuzzi` (jacuzzi jets; globally-unique device in `devices_without_room`, so no room word needed even though the terrace mic defaults to `terrace`) |
+| `включи/выключи пузырьки` \| `пузыри` (any mic) | `turn_on` / `turn_off` | `switch.pool_bubbles` (jacuzzi air bubbles; also in `devices_without_room`. The `bubbles` alias is ordered **before** `jacuzzi` in `device_aliases` so `пузырьки в джакузи` resolves to bubbles, not the jets) |
 | `включи/выключи везде свет` (any mic) | `turn_on` / `turn_off` | every `light` entity across rooms (via the `everywhere` virtual room) |
 
 The garden and terrace cases rely on `send_homeassistant_command`
@@ -127,9 +129,16 @@ DEDUPE_WINDOW_SEC = 2.0
 
 default_room = "living_room"
 source_rooms = {"cam201": "terrace"}
+# Globally-unique pool devices — reachable from any mic without naming the
+# room (the terrace mic defaults to "terrace", but these live under "pool").
+devices_without_room = ["jacuzzi", "bubbles"]
 device_aliases = {
     "light": ["свет", "лампа", "light", "lamp"],
     "fan":   ["вентилятор", "пропеллер", "fan", "propeller"],
+    # bubbles MUST stay before jacuzzi — matching is first-in-dict-order,
+    # so "пузырьки в джакузи" resolves to bubbles, not the jacuzzi jets.
+    "bubbles": ["пузырьки", "пузыри", "bubbles"],
+    "jacuzzi": ["джакузи", "jacuzzi"],
 }
 room_aliases = {
     "living_room": ["living room", "гостиная", "гостиной"],
@@ -145,7 +154,11 @@ room_entities = {
         "fan":   ["switch.terrace_fan_switch", "switch.terrace_fan_switch_2"],
         "light": ["switch.terrace_light_main", "switch.terrace_strip_poolceiling_light_switch"],
     },
-    "pool":        {"light": ["switch.pool_light", "switch.terrace_strip_poolceiling_light_switch_2"]},
+    "pool":        {
+        "light":   ["switch.pool_light", "switch.terrace_strip_poolceiling_light_switch_2"],
+        "jacuzzi": "switch.pool_jacuzzi",
+        "bubbles": "switch.pool_bubbles",
+    },
     # Virtual room — keep in sync with the real rooms above
     "everywhere":  {
         "light": [
